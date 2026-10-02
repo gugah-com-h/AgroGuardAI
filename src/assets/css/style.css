@@ -1,0 +1,150 @@
+/* Reseta margens e espaçamentos padrão */
+* {
+    margin: 0;
+    padding: 0;
+    box-sizing: border-box;
+}
+
+body, html {
+    width: 100%;
+    height: 100vh;
+    font-family: 'Courier Prime', monospace;
+    overflow: hidden; /* Evita que a barra de rolagem desloque elementos flutuantes */
+}
+
+/* --- BARRA SUPERIOR COMPARTILHADA (TOP-BAR) --- */
+.top-bar {
+    position: absolute;
+    top: 0;
+    left: 50%;
+    transform: translateX(-50%);
+    width: 85%;
+    max-width: 1200px;
+    height: 70px;
+    background-color: #488E43;
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    padding: 0 32px;
+    border-bottom-left-radius: 12px;
+    border-bottom-right-radius: 12px;
+    box-shadow: 0 6px 16px rgba(0, 0, 0, 0.3);
+    z-index: 100;
+}
+
+.top-bar .logo h1 {
+    font-family: 'Montserrat', sans-serif;
+    font-size: 1.8rem;
+    font-weight: 900;
+    color: #FFFFFF;
+    letter-spacing: -0.5px;
+    user-select: none;
+}
+
+.nav-icons {
+    display: flex;
+    align-items: center;
+    gap: 15px;
+}
+
+.icon-btn {
+    background: none;
+    border: none;
+    cursor: pointer;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    padding: 4px;
+    border-radius: 50%;
+    transition: opacity 0.2s;
+}
+
+.icon-btn:hover {
+    opacity: 0.8;
+}
+
+.icon-btn img,
+.icon-btn svg {
+    width: 28px;
+    height: 28px;
+    fill: #FFFFFF;
+    filter: brightness(0) invert(1);
+}
+
+/* Hamburger e título mobile: só aparecem no celular */
+.menu-toggle,
+.mobile-title {
+    display: none;
+}
+
+@media (max-width: 600px) {
+    /* Barra transparente de ponta a ponta, sem logo (modelo do Figma) */
+    .top-bar {
+        left: 0;
+        transform: none;
+        width: 100%;
+        max-width: none;
+        height: 80px;
+        padding: 0 20px 0 30px;
+        background-color: transparent;
+        border-radius: 0;
+        box-shadow: none;
+    }
+
+    .top-bar .logo {
+        display: none;
+    }
+
+    .mobile-title {
+        display: block;
+        font-family: 'Montserrat', sans-serif;
+        font-size: clamp(1.1rem, 5.2vw, 1.5rem);
+        font-weight: 800;
+        color: #1F521B;
+        text-transform: lowercase;
+        user-select: none;
+    }
+
+    .menu-toggle {
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        margin-left: auto;
+        width: 40px;
+        height: 40px;
+        padding: 0;
+        background: none;
+        border: none;
+        color: #111111;
+        cursor: pointer;
+    }
+
+    .menu-toggle svg {
+        width: 32px;
+        height: 32px;
+    }
+
+    /* Ícones de navegação viram um menu suspenso abaixo do hamburger */
+    .nav-icons {
+        display: none;
+    }
+
+    .nav-icons.open {
+        display: flex;
+        flex-direction: column;
+        gap: 10px;
+        position: absolute;
+        top: 68px;
+        right: 20px;
+        padding: 10px 12px;
+        background-color: #488E43;
+        border-radius: 12px;
+        box-shadow: 0 6px 16px rgba(0, 0, 0, 0.3);
+    }
+
+    .icon-btn img,
+    .icon-btn svg {
+        width: 24px;
+        height: 24px;
+    }
+}

@@ -1,0 +1,211 @@
+/* Container principal (Formulário) dividindo a tela em 50/50 */
+form {
+    display: flex;
+    width: 100%;
+    min-height: 100vh;
+}
+
+/* --- LADO ESQUERDO (FORMULÁRIO DE ENDEREÇO) --- */
+.lado-esquerdo {
+    flex: 1;
+    background-color: #FFFFFF;
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    padding: 40px;
+}
+
+.form-container {
+    width: 100%;
+    max-width: 520px;
+    display: flex;
+    flex-direction: column;
+    gap: 24px;
+}
+
+/* Agrupamento de label + input */
+.input-group {
+    display: flex;
+    flex-direction: column;
+    gap: 6px;
+    width: 100%;
+}
+
+.input-group.full-width {
+    width: 100%;
+}
+
+/* Linha com dois campos (ex: Cidade/Estado e CEP/País) */
+.row {
+    display: flex;
+    gap: 16px;
+    width: 100%;
+}
+
+/* Estilização dos Labels */
+.input-group label {
+    font-size: 0.85rem;
+    font-style: italic;
+    color: #4A4A4A;
+    font-weight: 500;
+}
+
+/* Estilização dos Inputs e Selects */
+.input-group input,
+.input-group select {
+    width: 100%;
+    padding: 12px 14px;
+    border: 2px solid #333333;
+    border-radius: 15px;
+    font-family: 'Courier Prime', monospace;
+    font-style: italic;
+    font-size: 0.95rem;
+    color: #333333;
+    outline: none;
+    background-color: #FFFFFF;
+}
+
+.input-group input::placeholder,
+.input-group select {
+    color: #555555;
+    font-style: italic;
+}
+
+.input-group input:focus,
+.input-group select:focus {
+    border-color: #488E43;
+}
+
+/* --- LADO DIREITO (SEÇÃO VERDE COM A MARCA) --- */
+.lado-direito {
+    flex: 1;
+    background-color: #488E43; /* Tom de verde principal */
+    color: #FFFFFF;
+    display: flex;
+    flex-direction: column;
+    justify-content: center;
+    align-items: center;
+    text-align: center;
+    padding: 40px;
+}
+
+/* Título da Marca "AgroGuard Ai" */
+.lado-direito h1 {
+    font-family: 'Montserrat', sans-serif;
+    font-size: 3.2rem;
+    font-weight: 900;
+    margin-bottom: 60px;
+    letter-spacing: -1px;
+}
+
+/* Subtítulo "Informe a localização..." */
+.lado-direito h2 {
+    font-family: 'Courier Prime', monospace;
+    font-size: 1.8rem;
+    font-weight: bold;
+    line-height: 1.4;
+    max-width: 450px;
+    margin-bottom: 70px;
+}
+
+/* Botão "próximo >>" */
+.lado-direito button {
+    background-color: #C1D89D; /* Verde claro do botão */
+    color: #2D5A27; /* Texto verde escuro */
+    border: none;
+    padding: 14px 60px;
+    font-size: 1rem;
+    font-family: 'Courier Prime', monospace;
+    font-weight: bold;
+    border-radius: 10px;
+    cursor: pointer;
+    transition: transform 0.2s, background-color 0.2s;
+}
+
+.lado-direito button:hover {
+    background-color: #b0cc88;
+    transform: scale(1.03);
+}
+
+/* --- RESPONSIVIDADE (modelo do Figma): verde em cima, formulário embaixo --- */
+@media (max-width: 850px) {
+    /* O style.css trava o scroll; em telas baixas o formulário precisa rolar */
+    html, body {
+        height: auto;
+        min-height: 100%;
+        overflow-y: auto;
+    }
+
+    form {
+        position: relative; /* referência para o botão "próximo" */
+        flex-direction: column-reverse; /* .lado-direito (verde) vai para cima */
+        min-height: 100vh;
+        min-height: 100dvh;
+    }
+
+    /* ---- Topo verde: só a frase ---- */
+    .lado-direito {
+        flex: 0 0 auto;
+        min-height: 42vh;
+        min-height: 42dvh;
+        padding: 40px;
+    }
+
+    /* A marca some visualmente no mobile, mas continua para leitores de tela */
+    .lado-direito h1 {
+        position: absolute;
+        width: 1px;
+        height: 1px;
+        margin: 0;
+        overflow: hidden;
+        clip: rect(0 0 0 0);
+    }
+
+    .lado-direito h2 {
+        font-size: clamp(1.8rem, 9vw, 2.4rem);
+        line-height: 1.15;
+        max-width: 12ch; /* força a quebra em "informe a / localização / de sua / propriedade" */
+        margin-bottom: 0;
+        text-transform: lowercase;
+    }
+
+    /* Botão "próximo" fixo no fim da parte branca (continua dentro do .lado-direito no HTML) */
+    .lado-direito button {
+        position: absolute;
+        left: 40px;
+        bottom: 80px;
+        width: calc(100% - 80px);
+        padding: 12px 0;
+        font-weight: normal;
+        text-transform: lowercase;
+    }
+
+    /* ---- Parte branca: formulário ---- */
+    .lado-esquerdo {
+        flex: 1;
+        align-items: flex-start;
+        padding: 56px 32px 160px; /* espaço embaixo para o botão */
+    }
+
+    /* Campos retangulares; Cidade e Estado lado a lado com a borda compartilhada */
+    .input-group input,
+    .input-group select {
+        position: relative;
+        border-radius: 0;
+    }
+
+    .input-group input:focus,
+    .input-group select:focus {
+        z-index: 1;
+    }
+
+    .row .input-group + .input-group input,
+    .row .input-group + .input-group select {
+        margin-left: -2px;
+        width: calc(100% + 2px);
+    }
+
+    .row {
+        gap: 0;
+    }
+}

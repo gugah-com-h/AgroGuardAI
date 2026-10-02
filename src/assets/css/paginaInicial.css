@@ -1,0 +1,206 @@
+/* Reseta margens e espaçamentos padrão */
+* {
+    margin: 0;
+    padding: 0;
+    box-sizing: border-box;
+}
+
+body, html {
+    width: 100%;
+    height: 100vh;
+    font-family: 'Courier Prime', monospace;
+    overflow-x: hidden;
+}
+
+/* Layout principal dividindo a tela em duas metades */
+main {
+    display: flex;
+    width: 100%;
+    height: 100vh;
+}
+
+/* --- SEÇÃO DA ESQUERDA (VERDE) --- */
+.lado-esquerdo {
+    flex: 1;
+    background-color: #488E43; /* Tom de verde principal */
+    color: #FFFFFF;
+    display: flex;
+    flex-direction: column;
+    justify-content: center;
+    align-items: center;
+    padding: 40px;
+    position: relative;
+    overflow: hidden;
+    text-align: center;
+}
+
+/* Círculos decorativos na seção esquerda */
+.lado-esquerdo::before {
+    content: '';
+    position: absolute;
+    top: -100px;
+    left: -100px;
+    width: 300px;
+    height: 300px;
+    border: 2px solid #FFFFFF;
+    border-radius: 50%;
+}
+
+.lado-esquerdo::after {
+    content: '';
+    position: absolute;
+    bottom: -120px;
+    left: -100px;
+    width: 320px;
+    height: 320px;
+    border: 2px solid #FFFFFF;
+    border-radius: 50%;
+}
+
+/* Título do lado esquerdo */
+.lado-esquerdo h1 {
+    font-size: 2rem;
+    font-weight: bold;
+    line-height: 1.4;
+    margin-bottom: 80px;
+    letter-spacing: 1px;
+    z-index: 1;
+}
+
+/* Botão "comece já!" */
+.lado-esquerdo button {
+    background-color: #C1D89D; /* Verde claro do botão */
+    color: #2D5A27; /* Texto verde escuro */
+    border: none;
+    padding: 14px 45px;
+    font-size: 1rem;
+    font-family: 'Courier Prime', monospace;
+    font-weight: bold;
+    border-radius: 12px;
+    cursor: pointer;
+    transition: transform 0.2s, background-color 0.2s;
+    z-index: 1;
+}
+
+.lado-esquerdo button:hover {
+    background-color: #b0cc88;
+    transform: scale(1.03);
+}
+
+/* --- SEÇÃO DA DIREITA (BRANCA) --- */
+.lado-direito {
+    flex: 1;
+    background-color: #FFFFFF;
+    color: #1F521B; /* Verde escuro para a marca */
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    padding: 40px;
+    position: relative;
+    overflow: hidden;
+}
+
+/* Círculos decorativos na seção direita */
+.lado-direito::before {
+    content: '';
+    position: absolute;
+    top: -150px;
+    left: 10%;
+    width: 350px;
+    height: 350px;
+    border: 2px solid #488E43;
+    border-radius: 50%;
+}
+
+.lado-direito::after {
+    content: '';
+    position: absolute;
+    bottom: -150px;
+    right: -100px;
+    width: 480px;
+    height: 480px;
+    border: 2px solid #488E43;
+    border-radius: 50%;
+}
+
+/* Título "AgroGuard Ai" */
+.lado-direito h1 {
+    font-family: 'Montserrat', sans-serif;
+    font-size: 3.2rem;
+    font-weight: 900;
+    letter-spacing: -1px;
+    z-index: 1;
+}
+
+/* --- MOBILE (modelo do Figma): branco em cima, verde embaixo --- */
+@media (max-width: 768px) {
+    main {
+        flex-direction: column-reverse; /* .lado-direito (marca) vai para cima */
+        height: 100vh;
+        height: 100dvh; /* acompanha a barra do navegador no celular */
+    }
+
+    /* ---- Topo branco: marca + linhas orgânicas ---- */
+    .lado-direito {
+        flex: 42 1 0;
+        padding: 20px;
+        text-align: center;
+    }
+
+    .lado-direito h1 {
+        font-size: clamp(2rem, 9vw, 2.8rem);
+    }
+
+    /* As linhas curvas viram um único desenho que ocupa a seção toda */
+    .lado-direito::before {
+        inset: 0;
+        width: 100%;
+        height: 100%;
+        border: none;
+        border-radius: 0;
+        background: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 390 351' preserveAspectRatio='none' fill='none' stroke='%23488E43' stroke-width='2'%3E%3Cpath vector-effect='non-scaling-stroke' d='M0,73 C70,68 118,80 115,125 C112,175 105,200 105,240 C105,300 80,340 0,350'/%3E%3Cpath vector-effect='non-scaling-stroke' d='M283,0 C265,40 255,75 300,92 C335,104 365,112 390,128'/%3E%3Cpath vector-effect='non-scaling-stroke' d='M221,351 C221,280 250,200 320,185 C360,177 380,215 390,233'/%3E%3C/svg%3E") no-repeat center / 100% 100%;
+    }
+
+    .lado-direito::after {
+        display: none;
+    }
+
+    /* ---- Parte verde: botão em cima, texto embaixo, alinhados à esquerda ---- */
+    .lado-esquerdo {
+        flex: 58 1 0;
+        justify-content: flex-start;
+        align-items: flex-start;
+        gap: 28px;
+        padding: 44px 40px;
+        text-align: left;
+    }
+
+    /* Sem círculos decorativos no mobile */
+    .lado-esquerdo::before,
+    .lado-esquerdo::after {
+        display: none;
+    }
+
+    /* O botão vem antes do título (o <a> é o item do flex) */
+    .lado-esquerdo a {
+        order: -1;
+        max-width: 100%;
+    }
+
+    .lado-esquerdo button {
+        width: 250px;
+        max-width: 100%;
+        padding: 12px 0;
+        border-radius: 10px;
+        font-weight: normal;
+        text-transform: lowercase;
+    }
+
+    .lado-esquerdo h1 {
+        font-size: clamp(1.8rem, 9vw, 2.4rem);
+        line-height: 1.15;
+        letter-spacing: 0;
+        margin-bottom: 0;
+        text-transform: lowercase;
+    }
+}

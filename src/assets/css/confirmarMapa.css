@@ -1,0 +1,177 @@
+/* Container que ocupa toda a tela */
+.mapa-container {
+    position: relative;
+    width: 100vw;
+    height: 100vh;
+    overflow: hidden;
+    background-color: #e5e5e5; /* Cor de carregamento padrão do mapa */
+}
+
+a{
+    text-decoration: none;
+}
+
+/* Área do Mapa */
+#map {
+    width: 100%;
+    height: 100%;
+    position: absolute;
+    top: 0;
+    left: 0;
+    z-index: 1;
+    /* Fundo simulando visualização de mapa de satélite/terreno */
+    background: linear-gradient(rgba(0,0,0,0.1), rgba(0,0,0,0.1)), 
+                radial-gradient(circle at 50% 50%, #83a971 0%, #4f6b41 100%);
+}
+
+/* --- HEADER FLUTUANTE (INSTRUÇÃO) --- */
+.mapa-header {
+    position: absolute;
+    top: 24px;
+    left: 50%;
+    transform: translateX(-50%);
+    z-index: 10;
+    background: rgba(255, 255, 255, 0.95);
+    backdrop-filter: blur(8px);
+    padding: 20px 32px;
+    border-radius: 80px;
+    box-shadow: 0 8px 24px rgba(0, 0, 0, 0.15);
+    text-align: center;
+    max-width: 550px;
+    width: 90%;
+    border: 1px solid rgba(72, 142, 67, 0.2);
+}
+
+.mapa-header .badge-brand {
+    display: inline-block;
+    font-family: 'Montserrat', sans-serif;
+    font-size: 0.85rem;
+    font-weight: 900;
+    color: #488E43;
+    text-transform: uppercase;
+    letter-spacing: 1px;
+    margin-bottom: 6px;
+}
+
+.mapa-header h1 {
+    font-family: 'Courier Prime', monospace;
+    font-size: 1.6rem;
+    color: #1F521B;
+    font-weight: 700;
+    margin-bottom: 8px;
+}
+
+.mapa-header p {
+    font-family: 'Courier Prime', monospace;
+    font-size: 0.9rem;
+    color: #555555;
+    line-height: 1.4;
+}
+
+/* --- BARRA INFERIOR (AÇÕES) --- */
+.mapa-actions {
+    position: absolute;
+    bottom: 32px;
+    left: 50%;
+    transform: translateX(-50%);
+    z-index: 10;
+    display: flex;
+    justify-content: center;
+    width: auto;
+}
+
+/* Botão de confirmação principal */
+.btn-confirmar {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    gap: 12px;
+    background-color: #488E43; /* Verde principal */
+    color: #FFFFFF;
+    border: none;
+    padding: 20px 40px;
+    font-size: 1.1rem;
+    font-family: 'Courier Prime', monospace;
+    font-weight: bold;
+    border-top-left-radius: 15px;
+    border-bottom-left-radius: 15px;
+    border-top-right-radius: 40px;
+    border-bottom-right-radius: 40px;
+    cursor: pointer;
+    box-shadow: 0 6px 20px rgba(0, 0, 0, 0.2);
+    transition: all 0.2s ease-in-out;
+}
+
+.btn-confirmar img {
+    width: 22px;
+    height: 22px;
+    filter: brightness(0) invert(1); /* Torna o ícone SVG branco se for escuro */
+}
+
+.btn-confirmar:hover {
+    background-color: #35b12c;
+    transform: translateY(-2px);
+    box-shadow: 0 8px 24px rgba(0, 0, 0, 0.25);
+}
+
+.btn-confirmar:active {
+    transform: translateY(0);
+}
+
+/* --- PIN / MARCADOR NO MAPA (SIMULAÇÃO) --- */
+.custom-pin {
+    position: absolute;
+    top: 50%;
+    left: 50%;
+    transform: translate(-50%, -100%);
+    z-index: 5;
+    pointer-events: none;
+}
+
+.pin-head {
+    width: 24px;
+    height: 24px;
+    background-color: #488E43;
+    border: 3px solid #FFFFFF;
+    border-radius: 50% 50% 50% 0;
+    transform: rotate(-45deg);
+    box-shadow: 0 4px 10px rgba(0,0,0,0.3);
+}
+
+.pin-pulse {
+    position: absolute;
+    bottom: -6px;
+    left: 50%;
+    transform: translateX(-50%);
+    width: 16px;
+    height: 6px;
+    background: rgba(0, 0, 0, 0.3);
+    border-radius: 50%;
+}
+
+/* --- RESPONSIVIDADE --- */
+@media (max-width: 600px) {
+    .mapa-header {
+        top: 16px;
+        padding: 16px;
+    }
+
+    .mapa-header h1 {
+        font-size: 1.2rem;
+    }
+
+    .mapa-header p {
+        font-size: 0.8rem;
+    }
+
+    .mapa-actions {
+        bottom: 24px;
+        width: 90%;
+    }
+
+    .btn-confirmar {
+        width: 100%;
+        padding: 14px 20px;
+        font-size: 1rem;
+    }
+}
