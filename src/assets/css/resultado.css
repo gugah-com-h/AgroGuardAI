@@ -1,0 +1,790 @@
+/* Tela de resultado (mapa + assistente) — escopada em .pagina-resultado.
+   Antes este CSS vivia como uma string JavaScript concatenada com barras
+   invertidas dentro do componente: sem realce de sintaxe, sem prefixos
+   automáticos e sem minificação pelo Vite. */
+
+.pagina-resultado {
+  display: flex;
+  flex: 1 0 auto;
+  width: 100%;
+  height: 100vh;
+  height: 100dvh;
+  overflow: hidden;
+  font-family: var(--fonte-corpo);
+}
+
+/* =============================== MAPA =============================== */
+
+.resultado__mapa {
+  flex: 1;
+  position: relative;
+  min-width: 0;
+}
+
+.resultado__mapa .leaflet-container {
+  width: 100%;
+  height: 100%;
+  background: #E5E5E5;
+  font-family: var(--fonte-corpo);
+}
+
+.resultado__info-area {
+  position: absolute;
+  top: 16px;
+  left: 16px;
+  z-index: 1000;
+
+  display: flex;
+  align-items: stretch;
+  gap: 8px;
+
+  max-width: calc(100% - 32px);
+}
+
+.resultado__info {
+  min-width: 0;
+  max-width: min(330px, calc(100vw - 92px));
+
+  background: rgba(255, 255, 255, 0.94);
+  backdrop-filter: blur(6px);
+
+  padding: 10px 16px;
+  border-radius: 10px;
+  box-shadow: var(--sombra);
+}
+
+.resultado__info h2 {
+  margin: 0 0 2px;
+  font-family: var(--fonte-titulo);
+  font-size: 0.95rem;
+  font-weight: 800;
+  color: var(--verde-escuro);
+}
+
+.resultado__info p {
+  margin: 0;
+  font-size: 0.75rem;
+  color: var(--texto-suave); /* era #555 num fundo translúcido */
+}
+
+.resultado__nova-consulta {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+
+  width: 48px;
+  min-width: 48px;
+  min-height: 48px;
+
+  padding: 0;
+  border: 1px solid var(--borda);
+  border-radius: 10px;
+
+  background: rgba(255, 255, 255, 0.94);
+  backdrop-filter: blur(6px);
+  color: var(--verde-escuro);
+
+  font-family: var(--fonte-titulo);
+  font-size: 0.92rem;
+  font-weight: 800;
+  line-height: 1;
+
+  box-shadow: var(--sombra);
+  cursor: pointer;
+
+  transition: background-color 0.2s;
+}
+
+.resultado__nova-consulta:hover {
+  background: var(--verde-claro);
+}
+
+.resultado__nova-consulta:focus-visible {
+  outline: 3px solid var(--verde-claro);
+  outline-offset: 2px;
+}
+
+/* Legenda do mapa de calor: antes as cores não eram explicadas em lugar
+   nenhum, e o usuário não sabia o que o vermelho significava. */
+.resultado__legenda {
+  position: absolute;
+  top: 210px;
+  left: 12px;
+  right: auto;
+  bottom: auto;
+
+  z-index: 1000;
+
+  background: rgba(255, 255, 255, 0.94);
+  backdrop-filter: blur(6px);
+
+  padding: 8px 12px;
+  border-radius: 10px;
+
+  box-shadow: var(--sombra);
+  font-size: 0.68rem;
+  color: var(--texto-suave);
+}
+
+.resultado__legenda-titulo {
+  display: block;
+  font-weight: 700;
+  color: var(--verde-escuro);
+  margin-bottom: 4px;
+}
+
+.resultado__legenda-escala {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+}
+
+.resultado__legenda-barra {
+  width: 86px;
+  height: 8px;
+  border-radius: 4px;
+  background: linear-gradient(90deg, #FFFFB2, #FECC5C, #FD8D3C, #F03B20, #BD0026);
+}
+
+/* --- Faixa de status sobre o mapa --- */
+.resultado__status {
+  position: absolute;
+  bottom: 30px;
+  left: 50%;
+  transform: translateX(-50%);
+  z-index: 1000;
+  max-width: calc(100% - 32px);
+  background: rgba(240, 240, 240, 0.96);
+  backdrop-filter: blur(6px);
+  border: 1px solid var(--borda);
+  border-left: 4px solid var(--score-sem-dados);
+  padding: 16px 32px;
+  border-radius: 8px;
+  display: flex;
+  align-items: center;
+  gap: 14px;
+  box-shadow: 0 4px 18px rgba(0, 0, 0, 0.25);
+  min-width: 300px;
+  justify-content: center;
+}
+
+.resultado__status h2 {
+  font-family: var(--fonte-titulo);
+  font-size: clamp(0.95rem, 1.6vw, 1.25rem);
+  font-weight: 800;
+  letter-spacing: 0.4px;
+  text-align: center;
+}
+
+.resultado__status svg {
+  width: 26px;
+  height: 26px;
+  flex-shrink: 0;
+}
+
+/* =============================== PAINEL =============================== */
+
+.resultado__painel {
+  width: 400px;
+  flex-shrink: 0;
+  height: 100%;
+  display: flex;
+  flex-direction: column;
+  background: var(--fundo-suave);
+  border-left: 1px solid #DDDDDD;
+  position: relative;
+  z-index: 10;
+}
+
+.painel__cabecalho {
+  padding: 14px 16px;
+  background: var(--verde-forte); /* 5,34:1 com o texto branco (era 4,02:1) */
+  color: #ffffff;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 10px;
+  flex-shrink: 0;
+}
+
+.painel__cabecalho h2 {
+  font-family: var(--fonte-titulo);
+  font-size: 1rem;
+  font-weight: 800;
+  margin: 0;
+}
+
+.btn-nova {
+  background: #ffffff;
+  color: var(--verde-claro-txt);
+  border: none;
+  padding: 8px 14px;
+  border-radius: 20px;
+  font-family: var(--fonte-corpo);
+  font-size: 0.8rem;
+  font-weight: 700;
+  white-space: nowrap;
+  transition: background-color 0.2s;
+}
+
+.btn-nova:hover {
+  background: var(--verde-claro);
+}
+
+.painel__cabecalho .btn-nova:focus-visible {
+  outline-color: #ffffff;
+}
+
+/* --- Cartões de score --- */
+.painel__scores {
+  display: flex;
+  gap: 6px;
+  padding: 10px 12px;
+  flex-wrap: wrap;
+  border-bottom: 1px solid #DDDDDD;
+  flex-shrink: 0;
+  background: var(--fundo-cartao);
+}
+
+.cartao-score {
+  display: flex;
+  align-items: baseline;
+  gap: 8px;
+  background: #ffffff;
+  border-radius: 8px;
+  padding: 8px 12px;
+  border-left: 3px solid var(--cor, var(--score-sem-dados));
+  box-shadow: 0 1px 4px rgba(0, 0, 0, 0.08);
+}
+
+.cartao-score__rotulo {
+  font-size: 0.7rem;
+  color: var(--rotulo); /* era #888 = 3,54:1 */
+  font-family: var(--fonte-corpo);
+}
+
+.cartao-score__valor {
+  font-size: 1.1rem;
+  font-weight: 800; /* a fonte só carrega 800 e 900; 700 virava negrito falso */
+  color: var(--cor, var(--score-sem-dados));
+  font-family: var(--fonte-titulo);
+  font-variant-numeric: tabular-nums;
+}
+
+/* --- Detalhes dos dados --- */
+.painel__dados {
+  flex-shrink: 0;
+  border-bottom: 1px solid #DDDDDD;
+  background: var(--fundo-cartao);
+}
+
+.painel__dados > summary {
+  padding: 10px 14px;
+  font-size: 0.78rem;
+  font-weight: 700;
+  color: var(--verde-escuro);
+  cursor: pointer;
+  list-style: none;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+}
+
+.painel__dados > summary::-webkit-details-marker {
+  display: none;
+}
+
+.painel__dados > summary::after {
+  content: '▾';
+  transition: transform 0.2s;
+}
+
+.painel__dados[open] > summary::after {
+  transform: rotate(180deg);
+}
+
+.painel__dados dl {
+  margin: 0;
+  padding: 0 14px 12px;
+  display: grid;
+  grid-template-columns: 1fr auto;
+  gap: 4px 12px;
+  font-size: 0.76rem;
+}
+
+.painel__dados dt {
+  color: var(--texto-suave);
+}
+
+.painel__dados dd {
+  margin: 0;
+  text-align: right;
+  font-weight: 700;
+  color: var(--texto);
+  font-variant-numeric: tabular-nums;
+}
+
+.painel__dados-secao {
+  grid-column: 1 / -1;
+  margin-top: 8px;
+  font-size: 0.7rem;
+  font-weight: 800;
+  text-transform: uppercase;
+  letter-spacing: 0.5px;
+  color: var(--rotulo);
+}
+
+/* --- Conversa --- */
+.painel__mensagens {
+  flex: 1;
+  padding: 16px;
+  overflow-y: auto;
+  overscroll-behavior: contain;
+  display: flex;
+  flex-direction: column;
+  gap: 14px;
+}
+
+.msg {
+  max-width: 85%;
+  padding: 12px 16px;
+  font-size: 0.88rem;
+  line-height: 1.5;
+  box-shadow: 0 1px 3px rgba(0, 0, 0, 0.06);
+  overflow-wrap: anywhere; /* `word-break:break-word` cortava palavras curtas */
+}
+
+.msg p {
+  margin: 0 0 0.5em;
+}
+
+.msg p:last-child {
+  margin-bottom: 0;
+}
+
+.msg ul {
+  margin: 0.25em 0 0.5em;
+  padding-left: 1.1em;
+}
+
+.msg li {
+  margin-bottom: 0.2em;
+}
+
+.msg--ia {
+  align-self: flex-start;
+  background: #D9D9D9;
+  color: var(--texto);
+  border-radius: 12px 12px 12px 0;
+}
+
+.msg--usuario {
+  align-self: flex-end;
+  background: var(--verde-claro);
+  color: var(--verde-escuro);
+  border-radius: 12px 12px 0 12px;
+}
+
+.msg--erro {
+  align-self: stretch;
+  max-width: 100%;
+  background: #FDECEC;
+  border: 1px solid #F3C2C2;
+  color: #7A1C1C;
+  border-radius: 12px;
+}
+
+.msg--erro strong {
+  display: block;
+  margin-bottom: 4px;
+}
+
+.msg--pensando {
+  color: var(--rotulo);
+  font-style: italic;
+}
+
+/* --- Caixa de envio --- */
+.painel__envio {
+  background: #D9D9D9;
+  padding: 10px 14px calc(10px + env(safe-area-inset-bottom, 0px));
+  display: flex;
+  align-items: flex-end;
+  gap: 10px;
+  flex-shrink: 0;
+}
+
+.painel__envio textarea {
+  flex: 1;
+  min-height: 42px;
+  max-height: 120px;
+  background: #ffffff;
+  border: 1px solid transparent;
+  border-radius: 20px;
+  padding: 11px 16px;
+  font-family: var(--fonte-corpo);
+  font-size: 0.88rem;
+  color: var(--texto);
+  resize: none;
+  line-height: 1.4;
+  overflow-y: auto;
+}
+
+.painel__envio textarea::placeholder {
+  color: var(--rotulo); /* era #999 = 2,85:1 */
+}
+
+.painel__envio textarea:disabled {
+  background: #ECECEC;
+  color: var(--rotulo);
+}
+
+.btn-enviar {
+  width: 42px;
+  height: 42px;
+  flex-shrink: 0;
+  border-radius: 50%;
+  background: #ffffff;
+  border: none;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  color: var(--verde-forte);
+  box-shadow: 0 1px 4px rgba(0, 0, 0, 0.1);
+  transition: background-color 0.2s, color 0.2s, opacity 0.2s;
+}
+
+.btn-enviar:hover:not(:disabled) {
+  background: var(--verde-forte);
+  color: #ffffff;
+}
+
+/* Antes o botão desabilitado era visualmente idêntico ao ativo. */
+.btn-enviar:disabled {
+  opacity: 0.45;
+  color: var(--rotulo);
+}
+
+/* --- Esqueletos de carregamento --- */
+@keyframes brilho {
+  0% { background-position: -400px 0; }
+  100% { background-position: 400px 0; }
+}
+
+.esqueleto-cartao,
+.esqueleto-balao {
+  background: linear-gradient(90deg, #E0E0E0 25%, #ECECEC 50%, #E0E0E0 75%);
+  background-size: 800px 100%;
+  animation: brilho 1.5s infinite;
+}
+
+.esqueleto-cartao {
+  flex: 1 1 80px;
+  min-width: 80px;
+  height: 40px;
+  border-radius: 8px;
+}
+
+.esqueleto-balao {
+  height: 50px;
+  border-radius: 12px 12px 12px 0;
+}
+
+/* --- Tela de erro dentro do painel --- */
+.painel__falha {
+  flex: 1;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  gap: 14px;
+  padding: 28px 20px;
+  text-align: center;
+}
+
+.painel__falha h3 {
+  font-family: var(--fonte-titulo);
+  font-size: 1rem;
+  color: var(--erro);
+}
+
+.painel__falha p {
+  font-size: 0.85rem;
+  color: var(--texto-suave);
+  line-height: 1.5;
+}
+
+.painel__falha-acoes {
+  display: flex;
+  gap: 10px;
+  flex-wrap: wrap;
+  justify-content: center;
+}
+
+.painel__falha-acoes button {
+  padding: 10px 20px;
+  border: none;
+  border-radius: 10px;
+  background: var(--verde-forte);
+  color: #ffffff;
+  font-family: var(--fonte-corpo);
+  font-weight: 700;
+  font-size: 0.85rem;
+}
+
+.painel__falha-acoes button.secundario {
+  background: var(--verde-claro);
+  color: var(--verde-claro-txt);
+}
+
+/* Elementos só de celular */
+.painel__puxador,
+.painel__nova-mobile {
+  display: none;
+}
+
+.leaflet-top.leaflet-left {
+    top: 100px;
+    left: 12px;
+  }
+
+/* =============================== CELULAR =============================== */
+
+@media (max-width: 768px) {
+  .pagina-resultado {
+    flex-direction: column;
+  }
+
+  .resultado__mapa {
+    flex: 1;
+    width: 100%;
+  }
+
+  /* Evita conflito visual entre o status do mapa e o puxador do painel. */
+  .resultado__status {
+    bottom: 86px;
+    padding: 12px 18px;
+    min-width: 0;
+    width: calc(100% - 32px);
+  }
+
+  .resultado__legenda {
+    top: 208px;
+    left: 12px;
+    right: auto;
+    bottom: auto;
+
+    padding: 6px 10px;
+    font-size: 0.64rem;
+  }
+
+  .painel {
+    width: 100%;
+  }
+
+  /*
+    Painel fechado:
+    - mostra apenas os 52px do puxador.
+
+    Painel aberto:
+    - ocupa 84% da altura disponível da tela;
+    - deixa uma pequena área do mapa visível acima;
+    - oferece espaço suficiente para mensagens longas.
+  */
+  .resultado__painel {
+    position: fixed;
+    bottom: 0;
+    left: 0;
+    right: 0;
+
+    width: 100%;
+    height: 84dvh;
+    max-height: 84dvh;
+    min-height: 0;
+
+    display: flex;
+    flex-direction: column;
+
+    border-radius: 20px 20px 0 0;
+    border-left: none;
+    border-top: 1px solid var(--borda);
+    box-shadow: 0 -4px 20px rgba(0, 0, 0, 0.15);
+
+    transform: translateY(calc(100% - 52px));
+    transition: transform 0.35s ease;
+    z-index: 1000;
+
+    overflow: hidden;
+  }
+
+  .resultado__painel.aberto {
+    transform: translateY(0);
+  }
+
+  /* Botão que abre e fecha o assistente. */
+  .painel__puxador {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    gap: 8px;
+
+    width: 100%;
+    height: 52px;
+    padding: 0;
+    border: none;
+
+    background: var(--verde-forte);
+    color: #ffffff;
+    border-radius: 20px 20px 0 0;
+
+    font-family: var(--fonte-titulo);
+    font-size: 0.85rem;
+    font-weight: 700;
+
+    user-select: none;
+    flex: 0 0 52px;
+  }
+
+  .painel__puxador .seta {
+    font-size: 1.1rem;
+    line-height: 1;
+    transition: transform 0.3s;
+  }
+
+  .resultado__painel.aberto .painel__puxador .seta {
+    transform: rotate(180deg);
+  }
+
+  /*
+    No mobile, o cabeçalho verde desktop é removido.
+    O botão "Nova consulta" próprio do celular continua visível.
+  */
+  .painel__cabecalho {
+    display: none;
+  }
+
+  .painel__nova-mobile {
+    display: flex;
+    flex: 0 0 auto;
+    padding: 8px 14px;
+  }
+
+  .painel__nova-mobile button {
+    width: 100%;
+    padding: 12px;
+
+    border: none;
+    border-radius: 10px;
+
+    background: var(--verde-claro);
+    color: var(--verde-claro-txt);
+
+    font-family: var(--fonte-corpo);
+    font-size: 0.85rem;
+    font-weight: 700;
+  }
+
+  /*
+    No JSX, este elemento possui:
+    style={{ display: 'contents' }}
+
+    O !important é necessário para substituir esse estilo inline.
+    Ele vira o container flexível que distribui:
+    scores → dados → mensagens → campo de envio.
+  */
+  #painel-conteudo {
+    display: flex !important;
+    flex: 1 1 auto;
+    flex-direction: column;
+    min-height: 0;
+    overflow: hidden;
+  }
+
+  /*
+    Estes elementos usam apenas a altura necessária.
+    A área de mensagens recebe todo o espaço restante.
+  */
+  .painel__scores,
+  .painel__dados {
+    flex: 0 0 auto;
+  }
+
+  /*
+    Área de conversa:
+    - cresce para ocupar a maior parte do painel;
+    - rola internamente;
+    - não deixa a rolagem "vazar" para a página/mapa.
+  */
+  .painel__mensagens {
+    flex: 1 1 auto;
+    min-height: 120px;
+
+    padding: 14px 16px;
+    overflow-y: auto;
+    overscroll-behavior: contain;
+  }
+
+  /*
+    Campo de envio sempre fica no rodapé do painel.
+    safe-area-inset-bottom evita que fique atrás da barra inferior
+    em celulares como iPhone.
+  */
+  .painel__envio {
+    flex: 0 0 auto;
+
+    padding: 10px 14px
+      calc(10px + env(safe-area-inset-bottom, 0px));
+  }
+
+  /*
+    16px evita zoom automático no Safari/iPhone ao tocar no textarea.
+    O tamanho maior também deixa o campo mais confortável para toque.
+  */
+  .painel__envio textarea {
+    min-height: 46px;
+    font-size: 16px;
+  }
+
+  .btn-enviar {
+    width: 46px;
+    height: 46px;
+    flex: 0 0 46px;
+  }
+
+  /*
+    Mensagens maiores e mais legíveis no celular.
+    O painel de IA passa a aproveitar melhor a largura disponível.
+  */
+  .msg {
+    max-width: 96%;
+    padding: 14px 16px;
+    font-size: 0.95rem;
+    line-height: 1.55;
+  }
+
+  .msg--ia {
+    padding: 14px 16px;
+  }
+
+  .resultado__info-area {
+    top: 14px;
+    left: 14px;
+    right: 14px;
+
+    gap: 7px;
+    max-width: none;
+  }
+
+  .resultado__info {
+    max-width: calc(100vw - 82px);
+    padding: 8px 14px;
+  }
+
+  .resultado__nova-consulta {
+    width: 44px;
+    min-width: 44px;
+    min-height: 44px;
+    border-radius: 10px;
+    font-size: 0.85rem;
+  }
+}

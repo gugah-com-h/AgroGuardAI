@@ -1,20 +1,35 @@
-import { BrowserRouter, Routes, Route, Navigate } from 'react-router-dom';
+import { BrowserRouter, Routes, Route, Navigate, useSearchParams } from 'react-router-dom';
 
-import Home from './pages/Home';
-import Localizacao from './pages/Localizacao';
-import ConfirmarLocalizacao from './pages/ConfirmarLocalizacao';
-import MapaPericulosidade from './pages/MapaPericulosidade';
+import ErrorBoundary from './components/ErrorBoundary.jsx';
+import NaoEncontrado from './components/NaoEncontrado.jsx';
+import Home from './pages/Home.jsx';
+import Localizacao from './pages/Localizacao.jsx';
+import ConfirmarLocalizacao from './pages/ConfirmarLocalizacao.jsx';
+import MapaPericulosidade from './pages/MapaPericulosidade.jsx';
+
+// /chat era um atalho histórico para a tela de resultado, mas o `Navigate`
+// direto descartava a query string: quem clicasse nele perdia o município e
+// caía num mapa sem dados.
+function RedirecionaChat() {
+  const [params] = useSearchParams();
+  const busca = params.toString();
+  return <Navigate to={busca ? `/mapa?${busca}` : '/mapa'} replace />;
+}
 
 export default function App() {
   return (
-    <BrowserRouter>
-      <Routes>
-        <Route path="/" element={<Home />} />
-        <Route path="/localizacao" element={<Localizacao />} />
-        <Route path="/confirmar-localizacao" element={<ConfirmarLocalizacao />} />
-        <Route path="/mapa" element={<MapaPericulosidade />} />
-        <Route path="/chat" element={<Navigate to="/mapa" replace />} />
-      </Routes>
-    </BrowserRouter>
+    <ErrorBoundary>
+      <BrowserRouter>
+        <Routes>
+          <Route path="/" element={<Home />} />
+          <Route path="/localizacao" element={<Localizacao />} />
+          <Route path="/confirmar-localizacao" element={<ConfirmarLocalizacao />} />
+          <Route path="/mapa" element={<MapaPericulosidade />} />
+          <Route path="/chat" element={<RedirecionaChat />} />
+          {/* Sem isto, qualquer URL desconhecida renderizava uma tela branca. */}
+          <Route path="*" element={<NaoEncontrado />} />
+        </Routes>
+      </BrowserRouter>
+    </ErrorBoundary>
   );
 }

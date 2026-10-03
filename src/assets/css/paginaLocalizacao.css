@@ -1,244 +1,276 @@
-/* Container principal (Formulário) dividindo a tela em 50/50 */
-form {
-    display: flex;
-    width: 100%;
-    min-height: 100vh;
+/* Tela de localização — escopada em .pagina-localizacao.
+   A versão anterior estilizava o seletor global `form` e reaproveitava
+   `.lado-esquerdo`/`.lado-direito` da página inicial com cores trocadas. */
+
+.pagina-localizacao__form-transparente {
+  display: contents;
 }
 
-/* --- LADO ESQUERDO (FORMULÁRIO DE ENDEREÇO) --- */
-.lado-esquerdo {
-    flex: 1;
-    background-color: #FFFFFF;
-    display: flex;
-    justify-content: center;
-    align-items: center;
-    padding: 40px;
+.pagina-localizacao {
+  display: flex;
+  flex: 1 0 auto;
+  width: 100%;
+  min-height: 100vh;
+  min-height: 100dvh;
 }
 
-.form-container {
-    width: 100%;
-    max-width: 520px;
-    display: flex;
-    flex-direction: column;
-    gap: 24px;
+/* --- Lado do formulário (branco) --- */
+.pagina-localizacao__form {
+  flex: 1;
+  background-color: var(--fundo);
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  padding: clamp(24px, 4vw, 40px);
 }
 
-/* Agrupamento de label + input */
-.input-group {
-    display: flex;
-    flex-direction: column;
-    gap: 6px;
-    width: 100%;
+.pagina-localizacao__campos {
+  width: 100%;
+  max-width: 520px;
+  display: flex;
+  flex-direction: column;
+  gap: 24px;
 }
 
-.input-group.full-width {
-    width: 100%;
+.campo {
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+  width: 100%;
 }
 
-/* Linha com dois campos (ex: Cidade/Estado e CEP/País) */
-.row {
-    display: flex;
-    gap: 16px;
-    width: 100%;
+.campo label {
+  font-size: 0.85rem;
+  font-style: italic;
+  color: var(--texto-suave);
+  font-weight: 500;
 }
 
-/* Estilização dos Labels */
-.input-group label {
-    font-size: 0.85rem;
-    font-style: italic;
-    color: #4A4A4A;
-    font-weight: 500;
+.campo select {
+  width: 100%;
+  padding: 12px 14px;
+  border: 2px solid var(--borda-forte);
+  border-radius: 15px;
+  font-family: var(--fonte-corpo);
+  font-style: italic;
+  font-size: 0.95rem;
+  color: var(--texto);
+  background-color: var(--fundo);
+  transition: border-color 0.15s;
 }
 
-/* Estilização dos Inputs e Selects */
-.input-group input,
-.input-group select {
-    width: 100%;
-    padding: 12px 14px;
-    border: 2px solid #333333;
-    border-radius: 15px;
-    font-family: 'Courier Prime', monospace;
-    font-style: italic;
-    font-size: 0.95rem;
-    color: #333333;
-    outline: none;
-    background-color: #FFFFFF;
+.campo select:hover:not(:disabled) {
+  border-color: var(--verde-forte);
 }
 
-.input-group input::placeholder,
-.input-group select {
-    color: #555555;
-    font-style: italic;
+.campo select:focus {
+  border-color: var(--verde-forte);
 }
 
-.input-group input:focus,
-.input-group select:focus {
-    border-color: #488E43;
+/* Estado desabilitado precisava ser visível: o seletor de município fica
+   bloqueado até escolher o estado, e nada indicava isso. */
+.campo select:disabled {
+  background-color: var(--fundo-cartao);
+  border-color: var(--borda);
+  color: var(--rotulo);
+  cursor: not-allowed;
 }
 
-/* --- LADO DIREITO (SEÇÃO VERDE COM A MARCA) --- */
-.lado-direito {
-    flex: 1;
-    background-color: #488E43; /* Tom de verde principal */
-    color: #FFFFFF;
-    display: flex;
-    flex-direction: column;
-    justify-content: center;
-    align-items: center;
-    text-align: center;
-    padding: 40px;
+.campo__dica {
+  font-size: 0.75rem;
+  color: var(--rotulo);
+  font-style: normal;
 }
 
-/* Título da Marca "AgroGuard Ai" */
-.lado-direito h1 {
-    font-family: 'Montserrat', sans-serif;
-    font-size: 3.2rem;
-    font-weight: 900;
-    margin-bottom: 60px;
-    letter-spacing: -1px;
+/* --- Separador "ou" --- */
+.separador {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  width: 100%;
 }
 
-/* Subtítulo "Informe a localização..." */
-.lado-direito h2 {
-    font-family: 'Courier Prime', monospace;
-    font-size: 1.8rem;
-    font-weight: bold;
-    line-height: 1.4;
-    max-width: 450px;
-    margin-bottom: 70px;
+.separador::before,
+.separador::after {
+  content: '';
+  flex: 1;
+  height: 1px;
+  background: var(--borda);
 }
 
-/* Botão "próximo >>" */
-.lado-direito button {
-    background-color: #C1D89D; /* Verde claro do botão */
-    color: #2D5A27; /* Texto verde escuro */
-    border: none;
-    padding: 14px 60px;
-    font-size: 1rem;
-    font-family: 'Courier Prime', monospace;
-    font-weight: bold;
-    border-radius: 10px;
-    cursor: pointer;
-    transition: transform 0.2s, background-color 0.2s;
+.separador span {
+  font-size: 0.8rem;
+  color: var(--rotulo);
+  font-style: italic;
 }
 
-.lado-direito button:hover {
-    background-color: #b0cc88;
-    transform: scale(1.03);
-}
-
-/* Botão de geolocalização */
+/* --- Botão de geolocalização --- */
 .btn-geo {
-    width: 100%;
-    display: flex;
-    align-items: center;
-    justify-content: center;
-    gap: 10px;
-    padding: 12px 14px;
-    border: 2px dashed #488E43;
-    border-radius: 15px;
-    background: #f0f8ef;
-    color: #2D5A27;
-    font-family: 'Courier Prime', monospace;
-    font-size: 0.92rem;
-    font-weight: bold;
-    cursor: pointer;
-    transition: background-color 0.2s, border-color 0.2s;
+  width: 100%;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 10px;
+  padding: 12px 14px;
+  border: 2px dashed var(--verde-forte);
+  border-radius: 15px;
+  background: #F0F8EF;
+  color: var(--verde-claro-txt);
+  font-family: var(--fonte-corpo);
+  font-size: 0.92rem;
+  font-weight: 700;
+  transition: background-color 0.2s, border-color 0.2s;
 }
 
 .btn-geo:hover:not(:disabled) {
-    background: #dff0db;
-    border-color: #2D5A27;
+  background: #DFF0DB;
+  border-color: var(--verde-escuro);
 }
 
 .btn-geo:disabled {
-    opacity: 0.6;
-    cursor: wait;
+  opacity: 0.65;
+  cursor: wait;
 }
 
-/* --- RESPONSIVIDADE (modelo do Figma): verde em cima, formulário embaixo --- */
+/* --- Mensagens de estado --- */
+.aviso {
+  display: flex;
+  align-items: flex-start;
+  gap: 8px;
+  font-size: 0.82rem;
+  line-height: 1.4;
+  margin: 0;
+  padding: 10px 12px;
+  border-radius: 10px;
+}
+
+.aviso--erro {
+  color: #7A1C1C;
+  background: #FDECEC;
+  border: 1px solid #F3C2C2;
+}
+
+.aviso--erro svg {
+  flex-shrink: 0;
+  margin-top: 1px;
+}
+
+.aviso__acao {
+  background: none;
+  border: none;
+  padding: 0;
+  color: #7A1C1C;
+  font-family: var(--fonte-corpo);
+  font-size: 0.82rem;
+  font-weight: 700;
+  text-decoration: underline;
+}
+
+/* --- Lado da marca (verde) --- */
+.pagina-localizacao__marca {
+  flex: 1;
+  background-color: var(--verde);
+  color: #ffffff;
+  display: flex;
+  flex-direction: column;
+  justify-content: center;
+  align-items: center;
+  text-align: center;
+  gap: clamp(32px, 8vh, 70px);
+  padding: clamp(24px, 4vw, 40px);
+}
+
+.pagina-localizacao__marca h1 {
+  font-family: var(--fonte-titulo);
+  font-size: clamp(2rem, 5vw, 3.2rem);
+  font-weight: 900;
+  letter-spacing: -1px;
+}
+
+.pagina-localizacao__marca h2 {
+  font-family: var(--fonte-corpo);
+  font-size: clamp(1.25rem, 2.4vw, 1.8rem);
+  font-weight: 700;
+  line-height: 1.4;
+  max-width: 450px;
+}
+
+.btn-proximo {
+  background-color: var(--verde-claro);
+  color: var(--verde-claro-txt);
+  border: none;
+  padding: 14px 60px;
+  font-size: 1rem;
+  font-family: var(--fonte-corpo);
+  font-weight: 700;
+  border-radius: 10px;
+  transition: transform 0.2s, background-color 0.2s, opacity 0.2s;
+}
+
+.btn-proximo:hover:not(:disabled) {
+  background-color: var(--verde-hover);
+  transform: scale(1.03);
+}
+
+/* Antes o botão desabilitado era idêntico ao ativo: o usuário clicava e
+   nada acontecia, sem explicação. */
+.btn-proximo:disabled {
+  opacity: 0.5;
+  background-color: #E4E9DC;
+  color: #5B6655;
+}
+
+/* --- Celular: verde em cima, formulário embaixo --- */
 @media (max-width: 850px) {
-    /* O style.css trava o scroll; em telas baixas o formulário precisa rolar */
-    html, body {
-        height: auto;
-        min-height: 100%;
-        overflow-y: auto;
-    }
+  .pagina-localizacao {
+    flex-direction: column-reverse;
+  }
 
-    form {
-        position: relative; /* referência para o botão "próximo" */
-        flex-direction: column-reverse; /* .lado-direito (verde) vai para cima */
-        min-height: 100vh;
-        min-height: 100dvh;
-    }
+  .pagina-localizacao__marca {
+    flex: 0 0 auto;
+    min-height: 38vh;
+    min-height: 38dvh;
+    gap: 0;
+    padding: 40px;
+  }
 
-    /* ---- Topo verde: só a frase ---- */
-    .lado-direito {
-        flex: 0 0 auto;
-        min-height: 42vh;
-        min-height: 42dvh;
-        padding: 40px;
-    }
+  /* A marca some visualmente, mas continua anunciada por leitores de tela */
+  .pagina-localizacao__marca h1 {
+    position: absolute;
+    width: 1px;
+    height: 1px;
+    overflow: hidden;
+    clip: rect(0 0 0 0);
+    clip-path: inset(50%);
+  }
 
-    /* A marca some visualmente no mobile, mas continua para leitores de tela */
-    .lado-direito h1 {
-        position: absolute;
-        width: 1px;
-        height: 1px;
-        margin: 0;
-        overflow: hidden;
-        clip: rect(0 0 0 0);
-    }
+  .pagina-localizacao__marca h2 {
+    font-size: clamp(1.8rem, 9vw, 2.4rem);
+    line-height: 1.15;
+    max-width: 12ch;
+    text-transform: lowercase;
+  }
 
-    .lado-direito h2 {
-        font-size: clamp(1.8rem, 9vw, 2.4rem);
-        line-height: 1.15;
-        max-width: 12ch; /* força a quebra em "informe a / localização / de sua / propriedade" */
-        margin-bottom: 0;
-        text-transform: lowercase;
-    }
+  /* O botão "próximo" era `position:absolute` ancorado no <form>; quando o
+     formulário crescia (mensagem de erro, teclado aberto) ele saía da tela.
+     Fixo na viewport, com respeito à área segura do aparelho. */
+  .btn-proximo {
+    position: fixed;
+    left: 20px;
+    right: 20px;
+    bottom: calc(16px + env(safe-area-inset-bottom, 0px));
+    z-index: 20;
+    width: auto;
+    padding: 14px 0;
+    font-weight: 400;
+    text-transform: lowercase;
+    box-shadow: 0 4px 16px rgba(0, 0, 0, 0.2);
+  }
 
-    /* Botão "próximo" fixo no fim da parte branca (continua dentro do .lado-direito no HTML) */
-    .lado-direito button {
-        position: absolute;
-        left: 40px;
-        bottom: 80px;
-        width: calc(100% - 80px);
-        padding: 12px 0;
-        font-weight: normal;
-        text-transform: lowercase;
-    }
-
-    /* ---- Parte branca: formulário ---- */
-    .lado-esquerdo {
-        flex: 1;
-        align-items: flex-start;
-        padding: 56px 32px 160px; /* espaço embaixo para o botão */
-    }
-
-    /* Campos retangulares; Cidade e Estado lado a lado com a borda compartilhada */
-    .input-group input,
-    .input-group select {
-        position: relative;
-        border-radius: 0;
-    }
-
-    .input-group input:focus,
-    .input-group select:focus {
-        z-index: 1;
-    }
-
-    .row .input-group + .input-group input,
-    .row .input-group + .input-group select {
-        margin-left: -2px;
-        width: calc(100% + 2px);
-    }
-
-    .row {
-        gap: 0;
-    }
-
-    .btn-geo {
-        border-radius: 0;
-    }
+  .pagina-localizacao__form {
+    flex: 1;
+    align-items: flex-start;
+    /* espaço para o botão fixo não cobrir o último campo */
+    padding: 40px 24px calc(96px + env(safe-area-inset-bottom, 0px));
+  }
 }
