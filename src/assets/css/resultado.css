@@ -505,8 +505,7 @@
     width: 100%;
   }
 
-  /* O status ficava a 70px do fundo e o puxador do painel ocupa 52px:
-     os dois se encostavam. Agora sobra folga. */
+  /* Evita conflito visual entre o status do mapa e o puxador do painel. */
   .resultado__status {
     bottom: 86px;
     padding: 12px 18px;
@@ -524,80 +523,187 @@
     width: 100%;
   }
 
+  /*
+    Painel fechado:
+    - mostra apenas os 52px do puxador.
+
+    Painel aberto:
+    - ocupa 84% da altura disponível da tela;
+    - deixa uma pequena área do mapa visível acima;
+    - oferece espaço suficiente para mensagens longas.
+  */
   .resultado__painel {
     position: fixed;
     bottom: 0;
     left: 0;
     right: 0;
-    height: 72dvh;
+
     width: 100%;
+    height: 84dvh;
+    max-height: 84dvh;
+    min-height: 0;
+
+    display: flex;
+    flex-direction: column;
+
     border-radius: 20px 20px 0 0;
     border-left: none;
     border-top: 1px solid var(--borda);
     box-shadow: 0 -4px 20px rgba(0, 0, 0, 0.15);
+
     transform: translateY(calc(100% - 52px));
     transition: transform 0.35s ease;
     z-index: 1000;
+
+    overflow: hidden;
   }
 
   .resultado__painel.aberto {
     transform: translateY(0);
   }
 
-  /* Era um <div> com onClick: invisível para o teclado e para leitores de
-     tela. Virou <button> de verdade. */
+  /* Botão que abre e fecha o assistente. */
   .painel__puxador {
     display: flex;
     align-items: center;
     justify-content: center;
     gap: 8px;
+
     width: 100%;
     height: 52px;
     padding: 0;
     border: none;
+
     background: var(--verde-forte);
     color: #ffffff;
     border-radius: 20px 20px 0 0;
+
     font-family: var(--fonte-titulo);
-    font-weight: 700;
     font-size: 0.85rem;
+    font-weight: 700;
+
     user-select: none;
-    flex-shrink: 0;
+    flex: 0 0 52px;
   }
 
   .painel__puxador .seta {
-    transition: transform 0.3s;
     font-size: 1.1rem;
     line-height: 1;
+    transition: transform 0.3s;
   }
 
   .resultado__painel.aberto .painel__puxador .seta {
     transform: rotate(180deg);
   }
 
+  /*
+    No mobile, o cabeçalho verde desktop é removido.
+    O botão "Nova consulta" próprio do celular continua visível.
+  */
   .painel__cabecalho {
     display: none;
   }
 
   .painel__nova-mobile {
     display: flex;
+    flex: 0 0 auto;
     padding: 8px 14px;
-    flex-shrink: 0;
   }
 
   .painel__nova-mobile button {
     width: 100%;
     padding: 12px;
-    background: var(--verde-claro);
-    color: var(--verde-claro-txt);
+
     border: none;
     border-radius: 10px;
+
+    background: var(--verde-claro);
+    color: var(--verde-claro-txt);
+
     font-family: var(--fonte-corpo);
     font-size: 0.85rem;
     font-weight: 700;
   }
 
+  /*
+    No JSX, este elemento possui:
+    style={{ display: 'contents' }}
+
+    O !important é necessário para substituir esse estilo inline.
+    Ele vira o container flexível que distribui:
+    scores → dados → mensagens → campo de envio.
+  */
+  #painel-conteudo {
+    display: flex !important;
+    flex: 1 1 auto;
+    flex-direction: column;
+    min-height: 0;
+    overflow: hidden;
+  }
+
+  /*
+    Estes elementos usam apenas a altura necessária.
+    A área de mensagens recebe todo o espaço restante.
+  */
+  .painel__scores,
+  .painel__dados {
+    flex: 0 0 auto;
+  }
+
+  /*
+    Área de conversa:
+    - cresce para ocupar a maior parte do painel;
+    - rola internamente;
+    - não deixa a rolagem "vazar" para a página/mapa.
+  */
+  .painel__mensagens {
+    flex: 1 1 auto;
+    min-height: 120px;
+
+    padding: 14px 16px;
+    overflow-y: auto;
+    overscroll-behavior: contain;
+  }
+
+  /*
+    Campo de envio sempre fica no rodapé do painel.
+    safe-area-inset-bottom evita que fique atrás da barra inferior
+    em celulares como iPhone.
+  */
+  .painel__envio {
+    flex: 0 0 auto;
+
+    padding: 10px 14px
+      calc(10px + env(safe-area-inset-bottom, 0px));
+  }
+
+  /*
+    16px evita zoom automático no Safari/iPhone ao tocar no textarea.
+    O tamanho maior também deixa o campo mais confortável para toque.
+  */
+  .painel__envio textarea {
+    min-height: 46px;
+    font-size: 16px;
+  }
+
+  .btn-enviar {
+    width: 46px;
+    height: 46px;
+    flex: 0 0 46px;
+  }
+
+  /*
+    Mensagens maiores e mais legíveis no celular.
+    O painel de IA passa a aproveitar melhor a largura disponível.
+  */
   .msg {
-    max-width: 92%;
+    max-width: 96%;
+    padding: 14px 16px;
+    font-size: 0.95rem;
+    line-height: 1.55;
+  }
+
+  .msg--ia {
+    padding: 14px 16px;
   }
 }
