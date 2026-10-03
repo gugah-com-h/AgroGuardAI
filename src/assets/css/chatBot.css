@@ -4,6 +4,7 @@ body {
     position: relative;
     height: 100vh;
     overflow: hidden;
+    padding-top: 50px;
 }
 
 /* Círculos decorativos no fundo */
@@ -152,6 +153,30 @@ body::after {
     background-color: #488E43;
     color: #FFFFFF;
     transform: scale(1.05);
+}
+
+/* Skeleton loading */
+@keyframes shimmer {
+    0% { background-position: -400px 0; }
+    100% { background-position: 400px 0; }
+}
+
+.skeleton-card {
+    flex: 1 1 120px;
+    min-width: 120px;
+    height: 62px;
+    border-radius: 8px;
+    background: linear-gradient(90deg, #e0e0e0 25%, #ececec 50%, #e0e0e0 75%);
+    background-size: 800px 100%;
+    animation: shimmer 1.5s infinite;
+}
+
+.skeleton-bubble {
+    height: 60px;
+    border-radius: 12px 12px 12px 0;
+    background: linear-gradient(90deg, #ddd 25%, #e8e8e8 50%, #ddd 75%);
+    background-size: 800px 100%;
+    animation: shimmer 1.5s infinite;
 }
 
 /* --- RESPONSIVIDADE (modelo do Figma) --- */

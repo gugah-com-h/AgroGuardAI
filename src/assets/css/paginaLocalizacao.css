@@ -127,6 +127,35 @@ form {
     transform: scale(1.03);
 }
 
+/* Botão de geolocalização */
+.btn-geo {
+    width: 100%;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    gap: 10px;
+    padding: 12px 14px;
+    border: 2px dashed #488E43;
+    border-radius: 15px;
+    background: #f0f8ef;
+    color: #2D5A27;
+    font-family: 'Courier Prime', monospace;
+    font-size: 0.92rem;
+    font-weight: bold;
+    cursor: pointer;
+    transition: background-color 0.2s, border-color 0.2s;
+}
+
+.btn-geo:hover:not(:disabled) {
+    background: #dff0db;
+    border-color: #2D5A27;
+}
+
+.btn-geo:disabled {
+    opacity: 0.6;
+    cursor: wait;
+}
+
 /* --- RESPONSIVIDADE (modelo do Figma): verde em cima, formulário embaixo --- */
 @media (max-width: 850px) {
     /* O style.css trava o scroll; em telas baixas o formulário precisa rolar */
@@ -207,5 +236,9 @@ form {
 
     .row {
         gap: 0;
+    }
+
+    .btn-geo {
+        border-radius: 0;
     }
 }
