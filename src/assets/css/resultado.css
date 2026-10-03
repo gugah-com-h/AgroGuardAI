@@ -28,14 +28,26 @@
   font-family: var(--fonte-corpo);
 }
 
-.resultado__info {
+.resultado__info-area {
   position: absolute;
   top: 16px;
   left: 16px;
   z-index: 1000;
+
+  display: flex;
+  align-items: stretch;
+  gap: 8px;
+
   max-width: calc(100% - 32px);
+}
+
+.resultado__info {
+  min-width: 0;
+  max-width: min(330px, calc(100vw - 92px));
+
   background: rgba(255, 255, 255, 0.94);
   backdrop-filter: blur(6px);
+
   padding: 10px 16px;
   border-radius: 10px;
   box-shadow: var(--sombra);
@@ -55,17 +67,60 @@
   color: var(--texto-suave); /* era #555 num fundo translúcido */
 }
 
+.resultado__nova-consulta {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+
+  width: 48px;
+  min-width: 48px;
+  min-height: 48px;
+
+  padding: 0;
+  border: 1px solid var(--borda);
+  border-radius: 10px;
+
+  background: rgba(255, 255, 255, 0.94);
+  backdrop-filter: blur(6px);
+  color: var(--verde-escuro);
+
+  font-family: var(--fonte-titulo);
+  font-size: 0.92rem;
+  font-weight: 800;
+  line-height: 1;
+
+  box-shadow: var(--sombra);
+  cursor: pointer;
+
+  transition: background-color 0.2s;
+}
+
+.resultado__nova-consulta:hover {
+  background: var(--verde-claro);
+}
+
+.resultado__nova-consulta:focus-visible {
+  outline: 3px solid var(--verde-claro);
+  outline-offset: 2px;
+}
+
 /* Legenda do mapa de calor: antes as cores não eram explicadas em lugar
    nenhum, e o usuário não sabia o que o vermelho significava. */
 .resultado__legenda {
   position: absolute;
-  right: 16px;
-  bottom: 16px;
+  top: 210px;
+  left: 12px;
+  right: auto;
+  bottom: auto;
+
   z-index: 1000;
+
   background: rgba(255, 255, 255, 0.94);
   backdrop-filter: blur(6px);
+
   padding: 8px 12px;
   border-radius: 10px;
+
   box-shadow: var(--sombra);
   font-size: 0.68rem;
   color: var(--texto-suave);
@@ -514,9 +569,13 @@
   }
 
   .resultado__legenda {
-    bottom: 86px;
-    right: 16px;
+    top: 208px;
+    left: 12px;
+    right: auto;
+    bottom: auto;
+
     padding: 6px 10px;
+    font-size: 0.64rem;
   }
 
   .painel {
@@ -705,5 +764,27 @@
 
   .msg--ia {
     padding: 14px 16px;
+  }
+
+  .resultado__info-area {
+    top: 14px;
+    left: 14px;
+    right: 14px;
+
+    gap: 7px;
+    max-width: none;
+  }
+
+  .resultado__info {
+    max-width: calc(100vw - 82px);
+    padding: 8px 14px;
+  }
+
+  .resultado__nova-consulta {
+    width: 44px;
+    min-width: 44px;
+    min-height: 44px;
+    border-radius: 10px;
+    font-size: 0.85rem;
   }
 }
