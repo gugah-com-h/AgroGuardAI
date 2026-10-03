@@ -208,7 +208,11 @@
     padding: 15px 18px;
   }
 
-  .btn-voltar span {
-    display: none; /* fica só a seta, para caber na linha */
+  .btn-voltar__texto {
+    display: none; /* esconde só o texto */
+  }
+
+  .btn-voltar__seta {
+    display: inline; /* garante que a seta continue visível */
   }
 }

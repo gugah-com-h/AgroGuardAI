@@ -165,7 +165,7 @@ export default function ConfirmarLocalizacao() {
 
         <footer className="pagina-confirmar__acoes">
           <button type="button" className="btn-voltar" onClick={() => navigate('/localizacao')}>
-            <span aria-hidden="true">&lt;&lt;</span> <span>Voltar</span>
+            <span aria-hidden="true" className='btn-voltar__seta'>&lt;&lt;</span> <span className="btn-voltar__texto">Voltar</span>
           </button>
           <button
             type="button"
