@@ -1,417 +1,463 @@
-import { useState, useEffect, useRef } from 'react';
-import { useSearchParams, useNavigate } from 'react-router-dom';
+import { useState, useEffect, useRef, useMemo, useCallback } from 'react';
+import { useSearchParams, useNavigate, Navigate } from 'react-router-dom';
 import { MapContainer, TileLayer, Marker, GeoJSON, useMap } from 'react-leaflet';
 import L from 'leaflet';
 import 'leaflet/dist/leaflet.css';
 import 'leaflet.heat';
 
-const GEMINI_KEY = import.meta.env.VITE_GEMINI_KEY;
-const GEMINI_PRIMARY = 'https://generativelanguage.googleapis.com/v1beta/models/gemini-3.5-flash-lite:generateContent?key=' + GEMINI_KEY;
-const GEMINI_FALLBACK = 'https://generativelanguage.googleapis.com/v1beta/models/gemini-3.8-flash:generateContent?key=' + GEMINI_KEY;
-const TIMEOUT_MS = 10000;
+import { aplicarIconePadrao } from '../lib/leafletIcone.js';
+import { apiGet, foiCancelado } from '../lib/api.js';
+import { perguntarGemini, temChave } from '../lib/gemini.js';
+import { montarInstrucaoSistema, perguntaDeAbertura } from '../lib/prompt.js';
+import { faixaRisco, corRisco, corAptidao } from '../lib/score.js';
+import { inteiro, decimal, moeda, percentual, score as fmtScore } from '../lib/format.js';
+import Mensagem from '../components/Mensagem.jsx';
+import css from '../assets/css/resultado.css?inline';
 
-delete L.Icon.Default.prototype._getIconUrl;
-L.Icon.Default.mergeOptions({
-  iconRetinaUrl: 'https://unpkg.com/leaflet@1.9.4/dist/images/marker-icon-2x.png',
-  iconUrl: 'https://unpkg.com/leaflet@1.9.4/dist/images/marker-icon.png',
-  shadowUrl: 'https://unpkg.com/leaflet@1.9.4/dist/images/marker-shadow.png',
-});
+aplicarIconePadrao();
 
-function HeatLayer({ points }) {
-  var map = useMap();
-  useEffect(function() {
-    if (!points.length) return;
-    var heat = L.heatLayer(points, {
+/* ------------------------------ mapa de calor ------------------------------ */
+
+function CamadaCalor({ pontos }) {
+  const mapa = useMap();
+  useEffect(() => {
+    if (!pontos.length) return undefined;
+    const camada = L.heatLayer(pontos, {
       radius: 18, blur: 22, maxZoom: 13, max: 1.0,
-      gradient: { 0.2: '#ffffb2', 0.4: '#fecc5c', 0.6: '#fd8d3c', 0.8: '#f03b20', 1: '#bd0026' }
-    }).addTo(map);
-    return function() { map.removeLayer(heat); };
-  }, [points, map]);
+      gradient: { 0.2: '#ffffb2', 0.4: '#fecc5c', 0.6: '#fd8d3c', 0.8: '#f03b20', 1: '#bd0026' },
+    }).addTo(mapa);
+    return () => { mapa.removeLayer(camada); };
+  }, [pontos, mapa]);
   return null;
 }
 
-function statusFromScore(score) {
-  if (score <= 20) return { text: 'MUITO BAIXO NÍVEL DE PERIGO', color: '#1b5e20' };
-  if (score <= 40) return { text: 'BAIXO NÍVEL DE PERIGO', color: '#4caf50' };
-  if (score <= 60) return { text: 'NÍVEL MODERADO DE PERIGO', color: '#ffc107' };
-  if (score <= 80) return { text: 'ALTO NÍVEL DE PERIGO', color: '#ff9800' };
-  return { text: 'NÍVEL CRÍTICO DE PERIGO', color: '#d32f2f' };
-}
+/* ------------------------------ cartão de score ------------------------------ */
 
-function ScoreCard({ label, value, color }) {
+function CartaoScore({ rotulo, valor, cor, titulo }) {
   return (
-    <div style={{
-      display: 'flex', alignItems: 'center', gap: 8, background: '#fff',
-      borderRadius: 8, padding: '8px 12px', borderLeft: '3px solid ' + color,
-      boxShadow: '0 1px 4px rgba(0,0,0,0.08)'
-    }}>
-      <span style={{ fontSize: '.7rem', color: '#888', fontFamily: "'Courier Prime', monospace" }}>{label}</span>
-      <span style={{ fontSize: '1.1rem', fontWeight: 700, color: color, fontFamily: "'Montserrat', sans-serif" }}>{value}</span>
+    <div className="cartao-score" style={{ '--cor': cor }} title={titulo}>
+      <span className="cartao-score__rotulo">{rotulo}</span>
+      <span className="cartao-score__valor">{fmtScore(valor)}</span>
     </div>
   );
 }
 
-function corScore(s) {
-  if (s <= 20) return '#1b5e20';
-  if (s <= 40) return '#4caf50';
-  if (s <= 60) return '#ffc107';
-  if (s <= 80) return '#ff9800';
-  return '#d32f2f';
-}
+const IconeOk = ({ cor }) => (
+  <svg viewBox="0 0 24 24" fill={cor} aria-hidden="true">
+    <path d="M12 2C6.48 2 2 6.48 2 12s4.48 10 10 10 10-4.48 10-10S17.52 2 12 2zm-2 15l-5-5 1.41-1.41L10 14.17l7.59-7.59L19 8l-9 9z" />
+  </svg>
+);
 
-function corAptidao(s) {
-  if (s >= 80) return '#1b5e20';
-  if (s >= 60) return '#4caf50';
-  if (s >= 40) return '#ffc107';
-  if (s >= 20) return '#ff9800';
-  return '#d32f2f';
-}
+const IconeAlerta = ({ cor }) => (
+  <svg viewBox="0 0 24 24" fill={cor} aria-hidden="true">
+    <path d="M1 21h22L12 2 1 21zm12-3h-2v-2h2v2zm0-4h-2v-4h2v4z" />
+  </svg>
+);
 
-function buildSystemPrompt(data) {
-  if (!data) return '';
-  var idx = data.indices;
-  var apt = data.aptidao;
-  return 'Você é o assistente AgroGuard AI, especialista em riscos agrícolas e ambientais no Brasil.\n' +
-    'Responda sempre em português, de forma clara e objetiva.\n\n' +
-    'Dados do município ' + data.municipio + ' – ' + data.uf + ' (lat: ' + data.lat + ', lon: ' + data.lon + '):\n\n' +
-    'SCORE GERAL DE RISCO AMBIENTAL: ' + data.score_geral + '/100 (' + data.classe_risco + ')\n' +
-    'Prioridade agrícola: ' + data.score_prioridade + '/100 (' + data.classe_prioridade + ')\n\n' +
-    'ÍNDICE DE FOGO (F): ' + idx.fogo.score_F + '/100\n' +
-    '- Focos totais no período: ' + idx.fogo.focos_total_ano + '\n' +
-    '- Focos últimos 30 dias: ' + idx.fogo.focos_30d + '\n' +
-    '- Focos últimos 7 dias: ' + idx.fogo.focos_7d + '\n' +
-    '- FRP máximo: ' + (idx.fogo.frp_max ?? 'N/A') + ' MW\n' +
-    '- FRP médio: ' + (idx.fogo.frp_medio ?? 'N/A') + ' MW\n\n' +
-    'ÍNDICE CLIMÁTICO (C): ' + idx.climatico.score_C + '/100\n' +
-    '- Dias sem chuva: ' + (idx.climatico.dias_sem_chuva ?? 'N/A') + '\n' +
-    '- Precipitação: ' + (idx.climatico.precipitacao ?? 'N/A') + ' mm\n\n' +
-    'ÍNDICE AGRÍCOLA (A): ' + idx.agricola.score_A + '/100\n' +
-    '- Hectares irrigados: ' + idx.agricola.hectares_irrigados + '\n' +
-    '- Pivôs estimados: ' + idx.agricola.qtd_pivos_estimada + '\n' +
-    '- Seguro rural (SISSER): ' + (idx.agricola.sisser?.tem_seguro ? 'Sim - ' + idx.agricola.sisser.apolices + ' apólices, ' + idx.agricola.sisser.area_segurada_ha + ' ha, R$ ' + idx.agricola.sisser.valor_segurado : 'Não encontrado') + '\n\n' +
-    (apt?.score_aptidao != null ? 'APTIDÃO AGRÍCOLA (ZARC): ' + apt.score_aptidao + '/100 (' + (apt.classe_aptidao?.[0] ?? '') + ')\n- Taxa aptidão geral: ' + (apt.zarc?.taxa_aptidao ?? 'N/A') + '%\n- Taxa aptidão sequeiro: ' + (apt.zarc?.taxa_aptidao_sequeiro ?? 'N/A') + '%\n- Culturas aptas: ' + (apt.zarc?.n_culturas_aptas ?? 'N/A') : 'APTIDÃO AGRÍCOLA: Dados não disponíveis') + '\n\n' +
-    (data.fatores_risco?.length ? 'FATORES DE ATENÇÃO:\n' + data.fatores_risco.map(function(f) { return '- ' + f; }).join('\n') : '') + '\n\n' +
-    'Fontes: INPE BDQueimadas, ANA/Embrapa (pivôs), MAPA SISSER/ZARC, IBGE.\n' +
-    'Use esses dados para responder as perguntas do usuário. Seja específico com números. Não invente dados.\n' +
-    'IMPORTANTE: Seus dados cobrem APENAS municípios brasileiros.';
-}
-
-async function askGemini(history, sysPrompt, isFirst) {
-  var contents = [];
-  contents.push({ role: 'user', parts: [{ text: sysPrompt }] });
-  contents.push({ role: 'model', parts: [{ text: 'Entendido.' }] });
-  if (isFirst || history.length <= 2) {
-    history.forEach(function(msg) {
-      contents.push({ role: msg.role === 'ai' ? 'model' : 'user', parts: [{ text: msg.text }] });
-    });
-  } else {
-    var lastAi = history.slice().reverse().find(function(m) { return m.role === 'ai'; });
-    var lastUser = history[history.length - 1];
-    if (lastAi) contents.push({ role: 'model', parts: [{ text: lastAi.text }] });
-    contents.push({ role: 'user', parts: [{ text: lastUser.text }] });
-  }
-  var body = JSON.stringify({ contents });
-  var opts = { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: body };
-  async function callWithTimeout(url, ms) {
-    var ctrl = new AbortController();
-    var timer = setTimeout(function() { ctrl.abort(); }, ms);
-    var res = await fetch(url, Object.assign({}, opts, { signal: ctrl.signal }));
-    clearTimeout(timer);
-    var json = await res.json();
-    var text = json.candidates?.[0]?.content?.parts?.[0]?.text;
-    if (!text) throw new Error('empty');
-    return text;
-  }
-  try { return await callWithTimeout(GEMINI_PRIMARY, TIMEOUT_MS); }
-  catch(e) { return await callWithTimeout(GEMINI_FALLBACK, TIMEOUT_MS * 2); }
-}
-
-var pageCSS = '\
-*{margin:0;padding:0;box-sizing:border-box}\
-.result-page{display:flex;width:100vw;height:100vh;overflow:hidden;font-family:"Courier Prime",monospace}\
-.map-side{flex:1;position:relative}\
-.map-side .leaflet-container{width:100%;height:100%}\
-\
-.status-overlay{position:absolute;bottom:30px;left:50%;transform:translateX(-50%);z-index:1000;\
-  background:rgba(235,235,235,.94);backdrop-filter:blur(6px);border:1px solid #c0c0c0;\
-  padding:18px 36px;border-radius:8px;display:flex;align-items:center;gap:14px;\
-  box-shadow:0 4px 18px rgba(0,0,0,.25);min-width:300px;justify-content:center;transition:opacity .3s}\
-.status-overlay h2{font-family:"Montserrat",sans-serif;font-size:1.25rem;font-weight:800;letter-spacing:.4px}\
-.status-overlay .status-icon{width:26px;height:26px;flex-shrink:0}\
-\
-.info-overlay{position:absolute;top:16px;left:16px;z-index:1000;\
-  background:rgba(255,255,255,.92);backdrop-filter:blur(6px);padding:10px 16px;\
-  border-radius:10px;box-shadow:0 2px 10px rgba(0,0,0,.15)}\
-.info-overlay h3{margin:0 0 2px;font-family:"Montserrat",sans-serif;font-size:.95rem;font-weight:800;color:#1F521B}\
-.info-overlay p{margin:0;font-size:.75rem;color:#555}\
-\
-.chat-side{width:400px;height:100vh;display:flex;flex-direction:column;background:#F0F0F0;\
-  border-left:1px solid #ddd;position:relative;z-index:10}\
-.chat-header{padding:14px 16px;background:#488E43;color:#fff;display:flex;align-items:center;\
-  justify-content:space-between;flex-shrink:0}\
-.chat-header h2{font-family:"Montserrat",sans-serif;font-size:1rem;font-weight:800;margin:0}\
-.chat-header .btn-nova{background:#fff;color:#488E43;border:none;padding:6px 14px;border-radius:20px;\
-  font-family:"Courier Prime",monospace;font-size:.8rem;font-weight:700;cursor:pointer;transition:opacity .2s}\
-.chat-header .btn-nova:hover{opacity:.85}\
-.score-bar{display:flex;gap:6px;padding:10px 12px;flex-wrap:wrap;border-bottom:1px solid #ddd;\
-  flex-shrink:0;background:#f7f7f7}\
-.chat-msgs{flex:1;padding:16px;overflow-y:auto;display:flex;flex-direction:column;gap:14px}\
-.msg{max-width:85%;padding:12px 16px;font-size:.88rem;line-height:1.45;box-shadow:0 1px 3px rgba(0,0,0,.06);word-break:break-word}\
-.msg-ai{align-self:flex-start;background:#D9D9D9;color:#222;border-radius:12px 12px 12px 0}\
-.msg-user{align-self:flex-end;background:#C1D89D;color:#1F521B;border-radius:12px 12px 0 12px}\
-.chat-bar{background:#D9D9D9;padding:10px 14px;display:flex;align-items:flex-end;gap:10px;flex-shrink:0}\
-.chat-bar textarea{flex:1;min-height:40px;max-height:100px;background:#E8E8E8;border:none;\
-  border-radius:20px;padding:10px 16px;font-family:"Courier Prime",monospace;font-size:.88rem;\
-  color:#333;outline:none;resize:none;line-height:1.4}\
-.chat-bar textarea::placeholder{color:#999}\
-.chat-bar .send{width:40px;height:40px;border-radius:50%;background:#fff;border:none;display:flex;\
-  align-items:center;justify-content:center;cursor:pointer;color:#488E43;box-shadow:0 1px 4px rgba(0,0,0,.1);\
-  transition:background .2s,color .2s}\
-.chat-bar .send:hover{background:#488E43;color:#fff}\
-\
-@keyframes shimmer{0%{background-position:-400px 0}100%{background-position:400px 0}}\
-.skel-card{flex:1 1 80px;min-width:80px;height:40px;border-radius:8px;\
-  background:linear-gradient(90deg,#e0e0e0 25%,#ececec 50%,#e0e0e0 75%);background-size:800px 100%;animation:shimmer 1.5s infinite}\
-.skel-bubble{height:50px;border-radius:12px 12px 12px 0;\
-  background:linear-gradient(90deg,#ddd 25%,#e8e8e8 50%,#ddd 75%);background-size:800px 100%;animation:shimmer 1.5s infinite}\
-\
-.mobile-chat-toggle{display:none}\
-.mobile-nova-consulta{display:none}\
-\
-@media(max-width:768px){\
-  .result-page{flex-direction:column}\
-  .map-side{flex:1;width:100%}\
-  .status-overlay{bottom:70px;padding:12px 20px;min-width:0;width:80%}\
-  .status-overlay h2{font-size:1rem}\
-  .chat-side{position:fixed;bottom:0;left:0;right:0;height:65vh;width:100%;\
-    border-radius:20px 20px 0 0;border-left:none;border-top:1px solid #ccc;\
-    box-shadow:0 -4px 20px rgba(0,0,0,.15);\
-    transform:translateY(calc(100% - 52px));transition:transform .35s ease;z-index:1000}\
-  .chat-side.expanded{transform:translateY(0)}\
-  .mobile-chat-toggle{display:flex;align-items:center;justify-content:center;gap:8px;padding:14px 0;\
-    cursor:pointer;background:#488E43;color:#fff;border-radius:20px 20px 0 0;\
-    font-family:"Montserrat",sans-serif;font-weight:700;font-size:.85rem;user-select:none;flex-shrink:0}\
-  .mobile-chat-toggle .chevron{transition:transform .3s;font-size:1.1rem}\
-  .chat-side.expanded .mobile-chat-toggle .chevron{transform:rotate(180deg)}\
-  .chat-header{display:none}\
-  .mobile-nova-consulta{display:flex;padding:8px 14px;flex-shrink:0}\
-  .btn-nova-mobile{width:100%;padding:10px;background:#C1D89D;color:#2D5A27;border:none;\
-    border-radius:10px;font-family:"Courier Prime",monospace;font-size:.85rem;font-weight:700;\
-    cursor:pointer;transition:background .2s}\
-  .btn-nova-mobile:hover{background:#b0cc88}\
-  .map-side{height:100vh}\
-}';
+/* ------------------------------ página ------------------------------ */
 
 export default function MapaPericulosidade() {
-  var navigate = useNavigate();
-  var [params] = useSearchParams();
-  var uf = params.get('uf') || '';
-  var municipio = params.get('municipio') || '';
-  var lat = parseFloat(params.get('lat')) || -15.5;
-  var lon = parseFloat(params.get('lon')) || -49.5;
+  const navigate = useNavigate();
+  const [params] = useSearchParams();
 
-  var [score, setScore] = useState(null);
-  var [loading, setLoading] = useState(true);
-  var [contorno, setContorno] = useState(null);
-  var [heatPoints, setHeatPoints] = useState([]);
-  var [messages, setMessages] = useState([]);
-  var [input, setInput] = useState('');
-  var [sending, setSending] = useState(false);
-  var [chatOpen, setChatOpen] = useState(false);
-  var sysPrompt = useRef('');
-  var messagesEnd = useRef(null);
+  const uf = (params.get('uf') || '').toUpperCase();
+  const municipioParam = params.get('municipio') || '';
 
-  // Load contorno + focos
-  useEffect(function() {
-    if (!uf) return;
-    fetch('/api/focos/' + uf)
-      .then(function(r) { return r.json(); })
-      .then(function(data) {
-        setHeatPoints(data.map(function(f) {
-          return [f.latitude, f.longitude, f.frp ? Math.min(f.frp / 300, 1) : 0.5];
-        }));
-      }).catch(function() {});
+  // `parseFloat(x) || padrão` descartava a coordenada 0 e qualquer valor
+  // inválido virava silenciosamente o centro de Goiás — o usuário recebia o
+  // score de outro lugar sem perceber.
+  const { lat, lon, coordsValidas } = useMemo(() => {
+    const la = Number.parseFloat(params.get('lat'));
+    const lo = Number.parseFloat(params.get('lon'));
+    return {
+      lat: Number.isFinite(la) ? la : -15.5,
+      lon: Number.isFinite(lo) ? lo : -49.5,
+      coordsValidas: Number.isFinite(la) && Number.isFinite(lo),
+    };
+  }, [params]);
 
-    fetch('/api/estado/' + uf)
-      .then(function(r) { return r.json(); })
-      .then(function(data) { if (data.contorno) setContorno(data.contorno); })
-      .catch(function() {});
+  const [dados, setDados] = useState(null);
+  const [erroDados, setErroDados] = useState(null);
+  const [carregando, setCarregando] = useState(true);
+  const [contorno, setContorno] = useState(null);
+  const [pontosCalor, setPontosCalor] = useState([]);
+  const [totalFocos, setTotalFocos] = useState(null);
+
+  const [mensagens, setMensagens] = useState([]);
+  const [entrada, setEntrada] = useState('');
+  const [enviando, setEnviando] = useState(false);
+  const [painelAberto, setPainelAberto] = useState(false);
+  const [tentativa, setTentativa] = useState(0);
+
+  const instrucao = useRef('');
+  const fimDasMensagens = useRef(null);
+  const areaTexto = useRef(null);
+  const aberturaPedida = useRef(false);
+
+  /* ---- contorno e focos ---- */
+  useEffect(() => {
+    if (!uf) return undefined;
+    const ctrl = new AbortController();
+
+    apiGet(`/focos/${uf}`, { signal: ctrl.signal })
+      .then((lista) => {
+        // Sem esta checagem, um corpo inesperado quebrava no `.map`.
+        if (!Array.isArray(lista)) return;
+        setTotalFocos(lista.length);
+        setPontosCalor(
+          lista
+            .filter((f) => Number.isFinite(f?.latitude) && Number.isFinite(f?.longitude))
+            .map((f) => [f.latitude, f.longitude, Number.isFinite(f.frp) ? Math.min(f.frp / 300, 1) : 0.5]),
+        );
+      })
+      .catch((e) => { if (!foiCancelado(e)) console.warn('[AgroGuard] focos indisponíveis:', e.message); });
+
+    apiGet(`/estado/${uf}`, { signal: ctrl.signal })
+      .then((d) => { if (d?.contorno) setContorno(d.contorno); })
+      .catch((e) => { if (!foiCancelado(e)) console.warn('[AgroGuard] contorno indisponível:', e.message); });
+
+    return () => ctrl.abort();
   }, [uf]);
 
-  // Load score + start AI
-  useEffect(function() {
-    if (!uf || !lat || !lon) return;
-    fetch('/api/score?lat=' + lat + '&lon=' + lon + '&uf=' + uf)
-      .then(function(r) { return r.json(); })
-      .then(async function(data) {
-        setScore(data);
-        sysPrompt.current = buildSystemPrompt(data);
-        var introReq = [{ role: 'user', text: 'Apresente um resumo dos dados de risco ambiental e aptid\u00e3o agr\u00edcola de ' + data.municipio + ' \u2013 ' + data.uf + ', destacando os principais fatores de aten\u00e7\u00e3o.' }];
-        try {
-          var reply = await askGemini(introReq, sysPrompt.current, true);
-          setMessages([{ role: 'ai', text: reply }]);
-        } catch(e) {
-          setMessages([{ role: 'ai', text: 'N\u00e3o consegui gerar a an\u00e1lise. Tente perguntar algo!' }]);
-        }
-        setLoading(false);
+  /* ---- score do município ---- */
+  useEffect(() => {
+    if (!uf || !coordsValidas) return undefined;
+    const ctrl = new AbortController();
+
+    setCarregando(true);
+    setErroDados(null);
+    aberturaPedida.current = false;
+
+    apiGet(`/score?lat=${lat}&lon=${lon}&uf=${uf}`, { signal: ctrl.signal })
+      .then((d) => {
+        setDados(d);
+        instrucao.current = montarInstrucaoSistema(d);
+        setCarregando(false);
       })
-      .catch(function() {
-        setLoading(false);
-        setMessages([{ role: 'ai', text: 'Erro ao carregar dados.' }]);
+      .catch((erro) => {
+        if (foiCancelado(erro)) return;
+        setDados(null);
+        setErroDados(erro.message);
+        setCarregando(false);
       });
-  }, [uf, lat, lon]);
 
-  useEffect(function() {
-    messagesEnd.current?.scrollIntoView({ behavior: 'smooth' });
-  }, [messages, sending]);
+    return () => ctrl.abort();
+  }, [uf, lat, lon, coordsValidas, tentativa]);
 
-  var handleSubmit = async function(e) {
-    e.preventDefault();
-    if (!input.trim() || sending) return;
-    var userMsg = input.trim();
-    setInput('');
-    var newMsgs = messages.concat([{ role: 'user', text: userMsg }]);
-    setMessages(newMsgs);
-    setSending(true);
-    try {
-      var reply = await askGemini(newMsgs, sysPrompt.current, false);
-      setMessages(function(prev) { return prev.concat([{ role: 'ai', text: reply }]); });
-    } catch(e) {
-      setMessages(function(prev) { return prev.concat([{ role: 'ai', text: 'Erro. Tente novamente.' }]); });
-    }
-    setSending(false);
+  /* ---- resumo automático da IA ----
+     Em efeito separado e com trava: no StrictMode do React 19 o efeito roda
+     duas vezes em desenvolvimento, e a versão anterior disparava duas
+     chamadas pagas ao Gemini a cada abertura da tela. */
+  useEffect(() => {
+    if (!dados || aberturaPedida.current) return undefined;
+    aberturaPedida.current = true;
+
+    const ctrl = new AbortController();
+    setEnviando(true);
+
+    perguntarGemini(
+      [{ role: 'user', text: perguntaDeAbertura(dados) }],
+      instrucao.current,
+      { signal: ctrl.signal },
+    )
+      .then((resposta) => setMensagens([{ role: 'ai', text: resposta }]))
+      .catch((erro) => {
+        if (erro?.name === 'AbortError') return;
+        setMensagens([{ role: 'erro', text: erro.message }]);
+      })
+      .finally(() => { if (!ctrl.signal.aborted) setEnviando(false); });
+
+    return () => ctrl.abort();
+  }, [dados]);
+
+  /* ---- rolagem automática ---- */
+  useEffect(() => {
+    fimDasMensagens.current?.scrollIntoView({ behavior: 'smooth', block: 'nearest' });
+  }, [mensagens, enviando]);
+
+  /* ---- envio de pergunta ---- */
+  const enviar = useCallback(
+    async (e) => {
+      e?.preventDefault();
+      const texto = entrada.trim();
+      if (!texto || enviando || !dados) return;
+
+      setEntrada('');
+      if (areaTexto.current) areaTexto.current.style.height = 'auto';
+
+      const historico = [...mensagens.filter((m) => m.role !== 'erro'), { role: 'user', text: texto }];
+      setMensagens((prev) => [...prev, { role: 'user', text: texto }]);
+      setEnviando(true);
+
+      try {
+        // O histórico completo vai junto: antes só a última resposta e a
+        // última pergunta eram enviadas, então a IA perdia o fio da conversa.
+        const resposta = await perguntarGemini(historico, instrucao.current);
+        setMensagens((prev) => [...prev, { role: 'ai', text: resposta }]);
+      } catch (erro) {
+        setMensagens((prev) => [...prev, { role: 'erro', text: erro.message }]);
+      } finally {
+        setEnviando(false);
+      }
+    },
+    [entrada, enviando, dados, mensagens],
+  );
+
+  const aoDigitar = (e) => {
+    setEntrada(e.target.value);
+    // A caixa tinha `max-height:120px` mas nunca crescia: a regra era morta.
+    const el = e.target;
+    el.style.height = 'auto';
+    el.style.height = `${Math.min(el.scrollHeight, 120)}px`;
   };
 
-  var handleKeyDown = function(e) {
+  const aoTeclar = (e) => {
     if (e.key === 'Enter' && !e.shiftKey) {
       e.preventDefault();
-      e.currentTarget.form.requestSubmit();
+      enviar();
     }
   };
 
-  var status = score ? statusFromScore(score.score_geral) : null;
-  var idx = score?.indices;
-  var apt = score?.aptidao;
+  /* ---- derivados ---- */
+  const faixa = faixaRisco(dados?.score_geral);
+  const idx = dados?.indices;
+  const apt = dados?.aptidao;
+  const sisser = idx?.agricola?.sisser;
+  const nomeMunicipio = dados?.municipio || municipioParam;
+  const semRisco = !dados || typeof dados.score_geral !== 'number';
 
-  var renderBold = function(text) {
-    return text.split(/(\*\*.*?\*\*)/g).map(function(part, j) {
-      return part.startsWith('**') && part.endsWith('**')
-        ? <strong key={j}>{part.slice(2, -2)}</strong> : part;
-    });
-  };
-
-  // SVG icons inline — colored to match status
-  var iconColor = status ? status.color : '#999';
-  var isLow = score && score.score_geral <= 40;
-  var statusSvg = isLow
-    ? <svg className="status-icon" viewBox="0 0 24 24" fill={iconColor}><path d="M12 2C6.48 2 2 6.48 2 12s4.48 10 10 10 10-4.48 10-10S17.52 2 12 2zm-2 15l-5-5 1.41-1.41L10 14.17l7.59-7.59L19 8l-9 9z"/></svg>
-    : <svg className="status-icon" viewBox="0 0 24 24" fill={iconColor}><path d="M1 21h22L12 2 1 21zm12-3h-2v-2h2v2zm0-4h-2v-4h2v4z"/></svg>;
+  // Chegar aqui sem estado nem coordenada deixava a tela em esqueleto eterno.
+  if (!uf || !coordsValidas) return <Navigate to="/localizacao" replace />;
 
   return (
     <>
-      <title>AgroGuard Ai - Resultado</title>
-      <style>{pageCSS}</style>
+      <title>{`AgroGuard Ai — ${nomeMunicipio || 'Resultado'}`}</title>
+      <style>{css}</style>
 
-      <div className="result-page">
-        {/* MAPA */}
-        <div className="map-side">
-          <MapContainer center={[lat, lon]} zoom={10} style={{ width: '100%', height: '100%' }} zoomControl={false}>
-            <TileLayer url="https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png" attribution="&copy; OpenStreetMap" />
-            <Marker position={[lat, lon]} />
-            {contorno && <GeoJSON data={contorno} style={{ color: '#488E43', weight: 2, fillOpacity: 0.05, dashArray: '6 4' }} />}
-            {heatPoints.length > 0 && <HeatLayer points={heatPoints} />}
+      <div className="pagina-resultado">
+        {/* ------------------------------ MAPA ------------------------------ */}
+        <div className="resultado__mapa">
+          <MapContainer center={[lat, lon]} zoom={10} style={{ width: '100%', height: '100%' }} zoomControl keyboard>
+            <TileLayer
+              url="https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png"
+              attribution='&copy; <a href="https://www.openstreetmap.org/copyright">OpenStreetMap</a>'
+              maxZoom={19}
+            />
+            {contorno && <GeoJSON data={contorno} style={{ color: '#3C7838', weight: 2, fillOpacity: 0.05, dashArray: '6 4' }} />}
+            {pontosCalor.length > 0 && <CamadaCalor pontos={pontosCalor} />}
+            <Marker position={[lat, lon]} alt={`Propriedade em ${nomeMunicipio || 'local selecionado'}`} />
           </MapContainer>
 
-          <div className="info-overlay">
-            <h3>{municipio || 'Carregando...'}{uf ? ' \u2013 ' + uf : ''}</h3>
-            <p>{heatPoints.length > 0 ? heatPoints.length + ' focos de calor' : 'Carregando focos...'}</p>
+          <div className="resultado__info">
+            <h2>{nomeMunicipio || 'Carregando…'}{uf ? ` – ${uf}` : ''}</h2>
+            <p>
+              {totalFocos === null
+                ? 'Carregando focos de calor…'
+                : `${inteiro(totalFocos)} focos de calor no estado`}
+            </p>
           </div>
 
-          {/* Status card */}
-          <div className="status-overlay" style={status ? { borderLeft: '4px solid ' + status.color } : {}}>
-            {loading ? (
-              <h2 style={{ color: '#777' }}>Calculando...</h2>
-            ) : status ? (
-              <>
-                <h2 style={{ color: status.color }}>{status.text}</h2>
-                {statusSvg}
-              </>
-            ) : (
-              <h2 style={{ color: '#d32f2f' }}>Erro ao consultar</h2>
-            )}
-          </div>
-        </div>
-
-        {/* CHAT */}
-        <div className={'chat-side' + (chatOpen ? ' expanded' : '')}>
-          <div className="mobile-chat-toggle" onClick={function() { setChatOpen(function(v) { return !v; }); }}>
-            <span className="chevron">{'\u25B2'}</span>
-            <span>Assistente IA</span>
-          </div>
-
-          <div className="mobile-nova-consulta">
-            <button className="btn-nova-mobile" onClick={function(e) { e.stopPropagation(); navigate('/localizacao'); }}>Nova Consulta</button>
-          </div>
-
-          <div className="chat-header">
-            <h2>AgroGuard AI</h2>
-            <button className="btn-nova" onClick={function() { navigate('/localizacao'); }}>Nova Consulta</button>
-          </div>
-
-          {loading ? (
-            <div className="score-bar">
-              {[1,2,3,4,5].map(function(i) { return <div key={i} className="skel-card" />; })}
-            </div>
-          ) : score && (
-            <div className="score-bar">
-              <ScoreCard label="Risco" value={score.score_geral} color={corScore(score.score_geral)} />
-              <ScoreCard label="Fogo" value={idx.fogo.score_F} color={corScore(idx.fogo.score_F)} />
-              <ScoreCard label="Clima" value={idx.climatico.score_C} color={corScore(idx.climatico.score_C)} />
-              <ScoreCard label="Agri" value={idx.agricola.score_A} color={corScore(idx.agricola.score_A)} />
-              {apt?.score_aptidao != null && (
-                <ScoreCard label="ZARC" value={apt.score_aptidao} color={corAptidao(apt.score_aptidao)} />
-              )}
+          {pontosCalor.length > 0 && (
+            <div className="resultado__legenda">
+              <span className="resultado__legenda-titulo">Focos de calor</span>
+              <div className="resultado__legenda-escala">
+                <span>menos</span>
+                <span className="resultado__legenda-barra" aria-hidden="true" />
+                <span>mais</span>
+              </div>
             </div>
           )}
 
-          <div className="chat-msgs">
-            {loading && (
-              <div style={{ display: 'flex', flexDirection: 'column', gap: 12 }}>
-                <div className="skel-bubble" style={{ width: '80%' }} />
-                <div className="skel-bubble" style={{ width: '60%' }} />
-                <div className="skel-bubble" style={{ width: '70%' }} />
-              </div>
+          <div
+            className="resultado__status"
+            style={{ borderLeftColor: carregando ? 'var(--score-sem-dados)' : faixa.cor }}
+            role="status"
+            aria-live="polite"
+          >
+            {carregando ? (
+              <h2 style={{ color: 'var(--texto-suave)' }}>Calculando o risco…</h2>
+            ) : erroDados ? (
+              <h2 style={{ color: 'var(--erro)' }}>Não foi possível calcular</h2>
+            ) : (
+              <>
+                <h2 style={{ color: faixa.cor }}>{faixa.texto}</h2>
+                {faixa.nivel === 'muito-baixo' || faixa.nivel === 'baixo'
+                  ? <IconeOk cor={faixa.cor} />
+                  : <IconeAlerta cor={faixa.cor} />}
+              </>
             )}
-            {messages.map(function(msg, i) {
-              return (
-                <div key={i} className={'msg ' + (msg.role === 'ai' ? 'msg-ai' : 'msg-user')}>
-                  <p style={{ whiteSpace: 'pre-wrap', margin: 0 }}>{renderBold(msg.text)}</p>
-                </div>
-              );
-            })}
-            {sending && (
-              <div className="msg msg-ai">
-                <p style={{ color: '#999', margin: 0 }}>Pensando...</p>
-              </div>
-            )}
-            <div ref={messagesEnd} />
+          </div>
+        </div>
+
+        {/* ------------------------------ PAINEL ------------------------------ */}
+        <aside className={`resultado__painel${painelAberto ? ' aberto' : ''}`}>
+          <button
+            type="button"
+            className="painel__puxador"
+            onClick={() => setPainelAberto((v) => !v)}
+            aria-expanded={painelAberto}
+            aria-controls="painel-conteudo"
+          >
+            <span className="seta" aria-hidden="true">▲</span>
+            <span>{painelAberto ? 'Fechar assistente' : 'Assistente IA'}</span>
+          </button>
+
+          <div className="painel__nova-mobile">
+            <button type="button" onClick={() => navigate('/localizacao')}>Nova consulta</button>
           </div>
 
-          <form className="chat-bar" onSubmit={handleSubmit}>
-            <textarea
-              placeholder="Pergunte sobre os dados..."
-              rows="1"
-              value={input}
-              onChange={function(e) { setInput(e.target.value); }}
-              onKeyDown={handleKeyDown}
-            />
-            <button type="submit" className="send" title="Enviar" disabled={sending}>
-              <svg width="18" height="18" viewBox="0 0 24 24" fill="currentColor">
-                <path d="M2.01 21L23 12 2.01 3 2 10l15 2-15 2z" />
-              </svg>
+          <div className="painel__cabecalho">
+            <h2>AgroGuard AI</h2>
+            <button type="button" className="btn-nova" onClick={() => navigate('/localizacao')}>
+              Nova consulta
             </button>
-          </form>
-        </div>
+          </div>
+
+          <div id="painel-conteudo" style={{ display: 'contents' }}>
+            {erroDados ? (
+              <div className="painel__falha" role="alert">
+                <h3>Não conseguimos os dados deste ponto</h3>
+                <p>{erroDados}</p>
+                <div className="painel__falha-acoes">
+                  <button type="button" onClick={() => setTentativa((t) => t + 1)}>Tentar de novo</button>
+                  <button type="button" className="secundario" onClick={() => navigate('/localizacao')}>
+                    Escolher outro local
+                  </button>
+                </div>
+              </div>
+            ) : (
+              <>
+                {carregando ? (
+                  <div className="painel__scores">
+                    {[1, 2, 3, 4, 5].map((i) => <div key={i} className="esqueleto-cartao" />)}
+                  </div>
+                ) : (
+                  <div className="painel__scores">
+                    <CartaoScore rotulo="Risco" valor={dados.score_geral} cor={faixa.cor}
+                      titulo={`Risco ambiental geral: ${faixa.curto}`} />
+                    <CartaoScore rotulo="Fogo" valor={idx?.fogo?.score_F} cor={corRisco(idx?.fogo?.score_F)}
+                      titulo="Índice de fogo (focos de calor e intensidade)" />
+                    <CartaoScore rotulo="Clima" valor={idx?.climatico?.score_C} cor={corRisco(idx?.climatico?.score_C)}
+                      titulo="Índice climático (chuva e risco meteorológico)" />
+                    <CartaoScore rotulo="Agrí" valor={idx?.agricola?.score_A} cor={corRisco(idx?.agricola?.score_A)}
+                      titulo="Índice agrícola (irrigação e seguro rural)" />
+                    {apt?.score_aptidao != null && (
+                      <CartaoScore rotulo="ZARC" valor={apt.score_aptidao} cor={corAptidao(apt.score_aptidao)}
+                        titulo={`Aptidão agrícola: ${apt.classe_aptidao?.[0] ?? ''} — nesta escala, maior é melhor`} />
+                    )}
+                  </div>
+                )}
+
+                {/* Os números brutos existiam na resposta mas só apareciam
+                    dentro do texto da IA. Agora ficam acessíveis direto. */}
+                {!carregando && dados && (
+                  <details className="painel__dados">
+                    <summary>Dados usados no cálculo</summary>
+                    <dl>
+                      <dt className="painel__dados-secao">Fogo</dt>
+                      <dt>Focos nos últimos 7 dias</dt><dd>{inteiro(idx?.fogo?.focos_7d)}</dd>
+                      <dt>Focos nos últimos 30 dias</dt><dd>{inteiro(idx?.fogo?.focos_30d)}</dd>
+                      <dt>Focos no ano</dt><dd>{inteiro(idx?.fogo?.focos_total_ano)}</dd>
+                      <dt>FRP máximo</dt><dd>{decimal(idx?.fogo?.frp_max)} MW</dd>
+                      <dt>Risco de fogo INPE</dt><dd>{idx?.fogo?.rf_inpe_classe ?? '—'}</dd>
+
+                      <dt className="painel__dados-secao">Clima</dt>
+                      <dt>Dias sem chuva</dt><dd>{decimal(idx?.climatico?.dias_sem_chuva)}</dd>
+                      <dt>Precipitação média</dt><dd>{decimal(idx?.climatico?.precipitacao_media)} mm</dd>
+
+                      <dt className="painel__dados-secao">Agricultura</dt>
+                      <dt>Área irrigada</dt><dd>{inteiro(idx?.agricola?.hectares_irrigados)} ha</dd>
+                      <dt>Pivôs estimados</dt><dd>{inteiro(idx?.agricola?.qtd_pivos_estimada)}</dd>
+                      {sisser?.tem_seguro && (
+                        <>
+                          <dt>Apólices de seguro</dt><dd>{inteiro(sisser.apolices)}</dd>
+                          <dt>Área segurada</dt><dd>{inteiro(sisser.area_segurada_ha)} ha</dd>
+                          <dt>Valor segurado</dt><dd>{moeda(sisser.valor_segurado)}</dd>
+                        </>
+                      )}
+
+                      {apt?.zarc && (
+                        <>
+                          <dt className="painel__dados-secao">Aptidão (ZARC)</dt>
+                          <dt>Taxa de aptidão</dt><dd>{percentual(apt.zarc.taxa_aptidao)}</dd>
+                          <dt>Aptidão de sequeiro</dt><dd>{percentual(apt.zarc.taxa_aptidao_sequeiro)}</dd>
+                          <dt>Culturas aptas</dt><dd>{inteiro(apt.zarc.n_culturas_aptas)}</dd>
+                        </>
+                      )}
+                    </dl>
+                  </details>
+                )}
+
+                <div className="painel__mensagens" aria-live="polite" aria-busy={enviando}>
+                  {carregando && (
+                    <>
+                      <div className="esqueleto-balao" style={{ width: '80%' }} />
+                      <div className="esqueleto-balao" style={{ width: '60%' }} />
+                      <div className="esqueleto-balao" style={{ width: '70%' }} />
+                    </>
+                  )}
+
+                  {!carregando && !temChave && mensagens.length === 0 && (
+                    <div className="msg msg--erro">
+                      <strong>Assistente indisponível</strong>
+                      Defina a variável VITE_GEMINI_KEY no arquivo .env e reinicie o servidor
+                      para habilitar as respostas da IA. Os scores acima continuam válidos.
+                    </div>
+                  )}
+
+                  {mensagens.map((msg, i) => (
+                    <div
+                      key={i}
+                      className={`msg ${msg.role === 'ai' ? 'msg--ia' : msg.role === 'erro' ? 'msg--erro' : 'msg--usuario'}`}
+                    >
+                      {msg.role === 'erro' ? (
+                        <>
+                          <strong>Não foi possível responder</strong>
+                          {msg.text}
+                        </>
+                      ) : (
+                        <Mensagem texto={msg.text} />
+                      )}
+                    </div>
+                  ))}
+
+                  {enviando && (
+                    <div className="msg msg--ia msg--pensando">Pensando…</div>
+                  )}
+
+                  <div ref={fimDasMensagens} />
+                </div>
+
+                <form className="painel__envio" onSubmit={enviar}>
+                  <label htmlFor="pergunta" className="so-leitor-tela">
+                    Pergunte sobre os dados deste município
+                  </label>
+                  <textarea
+                    id="pergunta"
+                    ref={areaTexto}
+                    placeholder={semRisco ? 'Aguardando os dados…' : 'Pergunte sobre os dados…'}
+                    rows={1}
+                    value={entrada}
+                    onChange={aoDigitar}
+                    onKeyDown={aoTeclar}
+                    disabled={semRisco || carregando}
+                  />
+                  <button
+                    type="submit"
+                    className="btn-enviar"
+                    title="Enviar pergunta"
+                    aria-label="Enviar pergunta"
+                    disabled={enviando || semRisco || !entrada.trim()}
+                  >
+                    <svg width="18" height="18" viewBox="0 0 24 24" fill="currentColor" aria-hidden="true">
+                      <path d="M2.01 21L23 12 2.01 3 2 10l15 2-15 2z" />
+                    </svg>
+                  </button>
+                </form>
+              </>
+            )}
+          </div>
+        </aside>
       </div>
     </>
   );

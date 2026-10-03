@@ -1,177 +1,213 @@
-/* Container que ocupa toda a tela */
-.mapa-container {
-    position: relative;
-    width: 100vw;
-    height: 100vh;
-    overflow: hidden;
-    background-color: #e5e5e5; /* Cor de carregamento padrão do mapa */
+/* Confirmação de localização — escopada em .pagina-confirmar.
+   A folha antiga definia `a { text-decoration: none }` globalmente e um
+   `#map` com gradiente que competia com o mapa real do Leaflet. */
+
+.pagina-confirmar {
+  position: relative;
+  width: 100%;
+  height: 100vh;
+  height: 100dvh;
+  overflow: hidden;
+  background-color: #E5E5E5;
 }
 
-a{
-    text-decoration: none;
+.pagina-confirmar__mapa {
+  position: absolute;
+  inset: 0;
+  z-index: 1;
 }
 
-/* Área do Mapa */
-#map {
-    width: 100%;
-    height: 100%;
-    position: absolute;
-    top: 0;
-    left: 0;
-    z-index: 1;
-    /* Fundo simulando visualização de mapa de satélite/terreno */
-    background: linear-gradient(rgba(0,0,0,0.1), rgba(0,0,0,0.1)), 
-                radial-gradient(circle at 50% 50%, #83a971 0%, #4f6b41 100%);
+.pagina-confirmar__mapa .leaflet-container {
+  width: 100%;
+  height: 100%;
+  background: #E5E5E5;
+  font-family: var(--fonte-corpo);
 }
 
-/* --- HEADER FLUTUANTE (INSTRUÇÃO) --- */
-.mapa-header {
-    position: absolute;
-    top: 24px;
-    left: 50%;
-    transform: translateX(-50%);
-    z-index: 10;
-    background: rgba(255, 255, 255, 0.95);
-    backdrop-filter: blur(8px);
-    padding: 20px 32px;
-    border-radius: 80px;
-    box-shadow: 0 8px 24px rgba(0, 0, 0, 0.15);
-    text-align: center;
-    max-width: 550px;
-    width: 90%;
-    border: 1px solid rgba(72, 142, 67, 0.2);
+/* --- Cabeçalho flutuante com a instrução --- */
+.pagina-confirmar__cabecalho {
+  position: absolute;
+  top: 24px;
+  left: 50%;
+  transform: translateX(-50%);
+  z-index: 10;
+  background: rgba(255, 255, 255, 0.96);
+  backdrop-filter: blur(8px);
+  padding: 18px 32px;
+  border-radius: 24px;
+  box-shadow: var(--sombra-alta);
+  text-align: center;
+  max-width: 560px;
+  width: calc(100% - 32px);
+  border: 1px solid rgba(72, 142, 67, 0.25);
 }
 
-.mapa-header .badge-brand {
-    display: inline-block;
-    font-family: 'Montserrat', sans-serif;
-    font-size: 0.85rem;
-    font-weight: 900;
-    color: #488E43;
-    text-transform: uppercase;
-    letter-spacing: 1px;
-    margin-bottom: 6px;
+.pagina-confirmar__selo {
+  display: inline-block;
+  font-family: var(--fonte-titulo);
+  font-size: 0.8rem;
+  font-weight: 900;
+  color: var(--verde-forte);
+  text-transform: uppercase;
+  letter-spacing: 1px;
+  margin-bottom: 6px;
 }
 
-.mapa-header h1 {
-    font-family: 'Courier Prime', monospace;
-    font-size: 1.6rem;
-    color: #1F521B;
-    font-weight: 700;
-    margin-bottom: 8px;
+.pagina-confirmar__cabecalho h1 {
+  font-family: var(--fonte-corpo);
+  font-size: clamp(1.1rem, 2.6vw, 1.5rem);
+  color: var(--verde-escuro);
+  font-weight: 700;
+  margin-bottom: 6px;
 }
 
-.mapa-header p {
-    font-family: 'Courier Prime', monospace;
-    font-size: 0.9rem;
-    color: #555555;
-    line-height: 1.4;
+.pagina-confirmar__cabecalho p {
+  font-family: var(--fonte-corpo);
+  font-size: 0.86rem;
+  color: var(--texto-suave);
+  line-height: 1.4;
 }
 
-/* --- BARRA INFERIOR (AÇÕES) --- */
-.mapa-actions {
-    position: absolute;
-    bottom: 32px;
-    left: 50%;
-    transform: translateX(-50%);
-    z-index: 10;
-    display: flex;
-    justify-content: center;
-    width: auto;
+.pagina-confirmar__local {
+  display: block;
+  margin-top: 8px;
+  font-size: 0.78rem;
+  color: var(--rotulo);
 }
 
-/* Botão de confirmação principal */
+.pagina-confirmar__local strong {
+  color: var(--verde-escuro);
+}
+
+/* --- Aviso de ponto fora do estado --- */
+.pagina-confirmar__alerta {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  justify-content: center;
+  margin-top: 10px;
+  padding: 8px 12px;
+  border-radius: 8px;
+  background: #FDECEC;
+  border: 1px solid #F3C2C2;
+  color: #7A1C1C;
+  font-size: 0.8rem;
+  line-height: 1.35;
+  text-align: left;
+}
+
+.pagina-confirmar__alerta svg {
+  flex-shrink: 0;
+}
+
+/* --- Barra inferior --- */
+.pagina-confirmar__acoes {
+  position: absolute;
+  bottom: calc(28px + env(safe-area-inset-bottom, 0px));
+  left: 50%;
+  transform: translateX(-50%);
+  z-index: 10;
+  display: flex;
+  gap: 12px;
+  align-items: center;
+}
+
+.btn-voltar {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: 8px;
+  background: rgba(255, 255, 255, 0.96);
+  color: var(--verde-escuro);
+  border: 1px solid var(--borda);
+  padding: 18px 22px;
+  font-family: var(--fonte-corpo);
+  font-size: 0.95rem;
+  font-weight: 700;
+  border-radius: 15px;
+  box-shadow: var(--sombra);
+  transition: background-color 0.2s;
+}
+
+.btn-voltar:hover {
+  background: #ffffff;
+  border-color: var(--verde-forte);
+}
+
 .btn-confirmar {
-    display: flex;
-    align-items: center;
-    justify-content: center;
-    gap: 12px;
-    background-color: #488E43; /* Verde principal */
-    color: #FFFFFF;
-    border: none;
-    padding: 20px 40px;
-    font-size: 1.1rem;
-    font-family: 'Courier Prime', monospace;
-    font-weight: bold;
-    border-top-left-radius: 15px;
-    border-bottom-left-radius: 15px;
-    border-top-right-radius: 40px;
-    border-bottom-right-radius: 40px;
-    cursor: pointer;
-    box-shadow: 0 6px 20px rgba(0, 0, 0, 0.2);
-    transition: all 0.2s ease-in-out;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: 12px;
+  background-color: var(--verde-forte);
+  color: #ffffff;
+  border: none;
+  padding: 18px 40px;
+  font-size: 1.05rem;
+  font-family: var(--fonte-corpo);
+  font-weight: 700;
+  border-top-left-radius: 15px;
+  border-bottom-left-radius: 15px;
+  border-top-right-radius: 40px;
+  border-bottom-right-radius: 40px;
+  box-shadow: var(--sombra-alta);
+  transition: background-color 0.2s, transform 0.2s, box-shadow 0.2s;
 }
 
 .btn-confirmar img {
-    width: 22px;
-    height: 22px;
-    filter: brightness(0) invert(1); /* Torna o ícone SVG branco se for escuro */
+  width: 22px;
+  height: 22px;
+  filter: brightness(0) invert(1);
 }
 
-.btn-confirmar:hover {
-    background-color: #35b12c;
-    transform: translateY(-2px);
-    box-shadow: 0 8px 24px rgba(0, 0, 0, 0.25);
+.btn-confirmar:hover:not(:disabled) {
+  background-color: var(--verde-escuro);
+  transform: translateY(-2px);
+  box-shadow: 0 10px 28px rgba(0, 0, 0, 0.26);
 }
 
-.btn-confirmar:active {
-    transform: translateY(0);
+.btn-confirmar:active:not(:disabled) {
+  transform: translateY(0);
 }
 
-/* --- PIN / MARCADOR NO MAPA (SIMULAÇÃO) --- */
-.custom-pin {
-    position: absolute;
-    top: 50%;
-    left: 50%;
-    transform: translate(-50%, -100%);
-    z-index: 5;
-    pointer-events: none;
+/* O hover antigo clareava o botão para #35b12c, que com texto branco dá
+   contraste 2,6:1. Além de ilegível, parecia um botão diferente. */
+.btn-confirmar:disabled {
+  background-color: #9AA69A;
+  box-shadow: none;
+  transform: none;
 }
 
-.pin-head {
-    width: 24px;
-    height: 24px;
-    background-color: #488E43;
-    border: 3px solid #FFFFFF;
-    border-radius: 50% 50% 50% 0;
-    transform: rotate(-45deg);
-    box-shadow: 0 4px 10px rgba(0,0,0,0.3);
-}
-
-.pin-pulse {
-    position: absolute;
-    bottom: -6px;
-    left: 50%;
-    transform: translateX(-50%);
-    width: 16px;
-    height: 6px;
-    background: rgba(0, 0, 0, 0.3);
-    border-radius: 50%;
-}
-
-/* --- RESPONSIVIDADE --- */
+/* --- Celular --- */
 @media (max-width: 600px) {
-    .mapa-header {
-        top: 16px;
-        padding: 16px;
-    }
+  .pagina-confirmar__cabecalho {
+    top: 12px;
+    padding: 14px 16px;
+    border-radius: 16px;
+  }
 
-    .mapa-header h1 {
-        font-size: 1.2rem;
-    }
+  .pagina-confirmar__cabecalho p {
+    font-size: 0.78rem;
+  }
 
-    .mapa-header p {
-        font-size: 0.8rem;
-    }
+  .pagina-confirmar__acoes {
+    left: 16px;
+    right: 16px;
+    transform: none;
+    bottom: calc(18px + env(safe-area-inset-bottom, 0px));
+  }
 
-    .mapa-actions {
-        bottom: 24px;
-        width: 90%;
-    }
+  .btn-confirmar {
+    flex: 1;
+    padding: 15px 20px;
+    font-size: 0.98rem;
+  }
 
-    .btn-confirmar {
-        width: 100%;
-        padding: 14px 20px;
-        font-size: 1rem;
-    }
+  .btn-voltar {
+    padding: 15px 18px;
+  }
+
+  .btn-voltar span {
+    display: none; /* fica só a seta, para caber na linha */
+  }
 }
