@@ -1,6 +1,6 @@
 import { useState, useEffect, useMemo, useRef, useCallback } from 'react';
 import { useNavigate, useSearchParams, Navigate } from 'react-router-dom';
-import { MapContainer, TileLayer, Marker, GeoJSON, useMapEvents, useMap } from 'react-leaflet';
+import { MapContainer, TileLayer, Marker, GeoJSON, useMapEvents, useMap, ZoomControl } from 'react-leaflet';
 import 'leaflet/dist/leaflet.css';
 import { aplicarIconePadrao } from '../lib/leafletIcone.js';
 import { apiGet, foiCancelado } from '../lib/api.js';
@@ -137,7 +137,7 @@ export default function ConfirmarLocalizacao() {
             center={coordInicial}
             zoom={11}
             style={{ width: '100%', height: '100%' }}
-            zoomControl
+            zoomControl={false}
             /* O teclado agora move e dá zoom no mapa (antes, impossível sem mouse) */
             keyboard
           >
@@ -146,6 +146,9 @@ export default function ConfirmarLocalizacao() {
               attribution='&copy; <a href="https://www.openstreetmap.org/copyright">OpenStreetMap</a>'
               maxZoom={19}
             />
+
+            <ZoomControl position="topleft" />
+
             {contorno && (
               <GeoJSON
                 data={contorno}

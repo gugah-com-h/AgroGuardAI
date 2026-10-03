@@ -488,6 +488,11 @@
   display: none;
 }
 
+.leaflet-top.leaflet-left {
+    top: 100px;
+    left: 12px;
+  }
+
 /* =============================== CELULAR =============================== */
 
 @media (max-width: 768px) {

@@ -215,4 +215,9 @@
   .btn-voltar__seta {
     display: inline; /* garante que a seta continue visível */
   }
+
+  .leaflet-top.leaflet-left {
+  top: 165px;
+  left: 12px;
+}
 }

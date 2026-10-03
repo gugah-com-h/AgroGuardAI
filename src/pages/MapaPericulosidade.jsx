@@ -1,6 +1,6 @@
 import { useState, useEffect, useRef, useMemo, useCallback } from 'react';
 import { useSearchParams, useNavigate, Navigate } from 'react-router-dom';
-import { MapContainer, TileLayer, Marker, GeoJSON, useMap } from 'react-leaflet';
+import { MapContainer, TileLayer, Marker, GeoJSON, useMap, ZoomControl } from 'react-leaflet';
 import L from 'leaflet';
 import 'leaflet/dist/leaflet.css';
 import 'leaflet.heat';
@@ -237,12 +237,13 @@ export default function MapaPericulosidade() {
       <div className="pagina-resultado">
         {/* ------------------------------ MAPA ------------------------------ */}
         <div className="resultado__mapa">
-          <MapContainer center={[lat, lon]} zoom={10} style={{ width: '100%', height: '100%' }} zoomControl keyboard>
+          <MapContainer center={[lat, lon]} zoom={10} style={{ width: '100%', height: '100%' }} zoomControl={false} keyboard>
             <TileLayer
               url="https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png"
               attribution='&copy; <a href="https://www.openstreetmap.org/copyright">OpenStreetMap</a>'
               maxZoom={19}
             />
+            <ZoomControl position="topleft" />
             {contorno && <GeoJSON data={contorno} style={{ color: '#3C7838', weight: 2, fillOpacity: 0.05, dashArray: '6 4' }} />}
             {pontosCalor.length > 0 && <CamadaCalor pontos={pontosCalor} />}
             <Marker position={[lat, lon]} alt={`Propriedade em ${nomeMunicipio || 'local selecionado'}`} />
