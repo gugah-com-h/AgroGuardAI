@@ -2,8 +2,13 @@
    A versão anterior estilizava o seletor global `form` e reaproveitava
    `.lado-esquerdo`/`.lado-direito` da página inicial com cores trocadas. */
 
+.pagina-localizacao__form-transparente {
+  display: contents;
+}
+
 .pagina-localizacao {
   display: flex;
+  flex: 1 0 auto;
   width: 100%;
   min-height: 100vh;
   min-height: 100dvh;

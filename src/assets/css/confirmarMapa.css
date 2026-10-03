@@ -4,6 +4,7 @@
 
 .pagina-confirmar {
   position: relative;
+  flex: 1 0 auto;
   width: 100%;
   height: 100vh;
   height: 100dvh;

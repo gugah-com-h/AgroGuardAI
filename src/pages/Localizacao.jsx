@@ -196,8 +196,10 @@ export default function Localizacao() {
       <meta name="description" content="Selecione o estado e o município da sua propriedade para consultar o risco ambiental." />
       <style>{css}</style>
 
-      <main>
-        <form className="pagina-localizacao" onSubmit={enviar}>
+      {/* O <main> carrega o layout; o <form> é transparente (display:contents)
+          para não criar um nível extra de caixa entre o root e as colunas. */}
+      <main className="pagina-localizacao">
+        <form className="pagina-localizacao__form-transparente" onSubmit={enviar}>
           <section className="pagina-localizacao__form">
             <div className="pagina-localizacao__campos">
               <div className="campo">

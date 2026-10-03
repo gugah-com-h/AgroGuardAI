@@ -69,8 +69,24 @@ body {
   -webkit-font-smoothing: antialiased;
 }
 
+/* A cadeia html > body > #root precisa esticar: sem isto, uma página cuja
+   altura resolve abaixo da viewport (o que acontece quando 100dvh difere de
+   100vh) deixa uma faixa do fundo do body aparecendo embaixo. */
 #root {
-  min-height: 100%;
+  display: flex;
+  flex-direction: column;
+  min-height: 100vh;
+  min-height: 100dvh;
+}
+
+/* Nada de `#root > *`: as páginas renderizam <style> e <meta> como filhos
+   diretos do root, e dar display a eles imprime o CSS na tela como texto.
+   Cada raiz de página declara seu próprio `flex: 1 0 auto`. */
+#root > style,
+#root > title,
+#root > meta,
+#root > link {
+  display: none;
 }
 
 img,
