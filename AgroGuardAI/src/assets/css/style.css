@@ -1,0 +1,389 @@
+/* =========================================================================
+   AgroGuard — folha global
+   Única fonte de reset, tokens e regras de <body>. As folhas de página só
+   estilizam dentro da própria raiz (.pagina-*), para que nada vaze de uma
+   rota para a outra.
+   ========================================================================= */
+
+:root {
+  /* --- Marca --------------------------------------------------------- */
+  --verde: #488E43;        /* superfícies grandes e textos grandes */
+  --verde-forte: #3C7838;  /* texto pequeno sobre verde (contraste 5,34:1) */
+  --verde-escuro: #1F521B; /* texto verde sobre fundo claro (9,21:1) */
+  --verde-claro: #C1D89D;  /* botão secundário */
+  --verde-claro-txt: #2D5A27; /* 5,22:1 sobre --verde-claro */
+  --verde-hover: #B0CC88;
+
+  /* --- Neutros (todos ≥4,5:1 sobre branco) ---------------------------- */
+  --texto: #222222;
+  --texto-suave: #4A4A4A;
+  --rotulo: #6B6B6B;
+  --borda: #CCCCCC;
+  --borda-forte: #333333;
+  --fundo: #FFFFFF;
+  --fundo-suave: #F0F0F0;
+  --fundo-cartao: #F7F7F7;
+
+  /* --- Faixas de score (espelham src/lib/score.js) -------------------- */
+  --score-muito-baixo: #1B5E20;
+  --score-baixo: #2E7D32;
+  --score-moderado: #836700;
+  --score-alto: #BF4F00;
+  --score-critico: #C62828;
+  --score-sem-dados: #6B6B6B;
+
+  --erro: #C62828;
+
+  /* --- Tipografia ------------------------------------------------------ */
+  --fonte-corpo: 'Courier Prime', ui-monospace, 'Cascadia Mono', monospace;
+  --fonte-titulo: 'Montserrat', system-ui, -apple-system, 'Segoe UI', sans-serif;
+
+  --raio: 12px;
+  --sombra: 0 2px 10px rgba(0, 0, 0, 0.15);
+  --sombra-alta: 0 8px 24px rgba(0, 0, 0, 0.18);
+}
+
+*,
+*::before,
+*::after {
+  margin: 0;
+  padding: 0;
+  box-sizing: border-box;
+}
+
+html,
+body {
+  width: 100%;
+  min-height: 100%;
+  font-family: var(--fonte-corpo);
+  color: var(--texto);
+  background-color: var(--fundo);
+  /* O reset antigo fixava `height:100vh; overflow:hidden` aqui, o que cortava
+     o formulário em telas baixas e obrigava cada página a desfazer a regra.
+     Agora quem decide se rola é a raiz de cada página. */
+  -webkit-text-size-adjust: 100%;
+}
+
+body {
+  text-rendering: optimizeLegibility;
+  -webkit-font-smoothing: antialiased;
+}
+
+/* A cadeia html > body > #root precisa esticar: sem isto, uma página cuja
+   altura resolve abaixo da viewport (o que acontece quando 100dvh difere de
+   100vh) deixa uma faixa do fundo do body aparecendo embaixo. */
+#root {
+  display: flex;
+  flex-direction: column;
+  min-height: 100vh;
+  min-height: 100dvh;
+}
+
+/* Nada de `#root > *`: as páginas renderizam <style> e <meta> como filhos
+   diretos do root, e dar display a eles imprime o CSS na tela como texto.
+   Cada raiz de página declara seu próprio `flex: 1 0 auto`. */
+#root > style,
+#root > title,
+#root > meta,
+#root > link {
+  display: none;
+}
+
+img,
+svg {
+  display: block;
+  max-width: 100%;
+}
+
+button,
+input,
+select,
+textarea {
+  font: inherit;
+  color: inherit;
+}
+
+button {
+  cursor: pointer;
+}
+
+button:disabled {
+  cursor: not-allowed;
+}
+
+a {
+  color: var(--verde-escuro);
+}
+
+/* --- Foco visível ------------------------------------------------------
+   Nenhum elemento tinha indicação de foco: era impossível navegar por
+   teclado sabendo onde se está. */
+:focus-visible {
+  outline: 3px solid var(--verde-escuro);
+  outline-offset: 2px;
+  border-radius: 4px;
+}
+
+/* Alvos de toque: mínimo recomendado de 44px em telas sensíveis ao toque. */
+@media (pointer: coarse) {
+  button,
+  select,
+  a[role='button'] {
+    min-height: 44px;
+  }
+}
+
+/* --- Movimento reduzido ------------------------------------------------
+   As animações de shimmer e as transições rodavam mesmo para quem pede
+   menos movimento no sistema. */
+@media (prefers-reduced-motion: reduce) {
+  *,
+  *::before,
+  *::after {
+    animation-duration: 0.01ms !important;
+    animation-iteration-count: 1 !important;
+    transition-duration: 0.01ms !important;
+    scroll-behavior: auto !important;
+  }
+}
+
+/* --- Utilitário: visível só para leitores de tela ---------------------- */
+.so-leitor-tela {
+  position: absolute;
+  width: 1px;
+  height: 1px;
+  margin: -1px;
+  padding: 0;
+  overflow: hidden;
+  clip: rect(0 0 0 0);
+  clip-path: inset(50%);
+  white-space: nowrap;
+  border: 0;
+}
+
+/* =========================================================================
+   BARRA SUPERIOR COMPARTILHADA (componente TopBar)
+   ========================================================================= */
+
+.top-bar {
+  position: absolute;
+  top: 0;
+  left: 50%;
+  transform: translateX(-50%);
+  width: 85%;
+  max-width: 1200px;
+  height: 70px;
+  background-color: var(--verde-forte);
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 0 32px;
+  border-bottom-left-radius: var(--raio);
+  border-bottom-right-radius: var(--raio);
+  box-shadow: 0 6px 16px rgba(0, 0, 0, 0.3);
+  z-index: 100;
+}
+
+.top-bar .logo h1 {
+  font-family: var(--fonte-titulo);
+  font-size: 1.8rem;
+  font-weight: 900;
+  color: #ffffff;
+  letter-spacing: -0.5px;
+  user-select: none;
+}
+
+.nav-icons {
+  display: flex;
+  align-items: center;
+  gap: 15px;
+}
+
+.icon-btn {
+  background: none;
+  border: none;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  padding: 6px;
+  border-radius: 50%;
+  transition: background-color 0.2s;
+}
+
+.icon-btn:hover {
+  background-color: rgba(255, 255, 255, 0.18);
+}
+
+.icon-btn img,
+.icon-btn svg {
+  width: 28px;
+  height: 28px;
+  filter: brightness(0) invert(1);
+}
+
+.menu-toggle,
+.mobile-title {
+  display: none;
+}
+
+@media (max-width: 600px) {
+  .top-bar {
+    left: 0;
+    transform: none;
+    width: 100%;
+    max-width: none;
+    height: 80px;
+    padding: 0 20px 0 30px;
+    background-color: transparent;
+    border-radius: 0;
+    box-shadow: none;
+  }
+
+  .top-bar .logo {
+    display: none;
+  }
+
+  .mobile-title {
+    display: block;
+    font-family: var(--fonte-titulo);
+    font-size: clamp(1.1rem, 5.2vw, 1.5rem);
+    font-weight: 800;
+    color: var(--verde-escuro);
+    text-transform: lowercase;
+    user-select: none;
+  }
+
+  .menu-toggle {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    margin-left: auto;
+    width: 44px;
+    height: 44px;
+    padding: 0;
+    background: none;
+    border: none;
+    color: #111111;
+  }
+
+  .menu-toggle svg {
+    width: 32px;
+    height: 32px;
+  }
+
+  .nav-icons {
+    display: none;
+  }
+
+  .nav-icons.open {
+    display: flex;
+    flex-direction: column;
+    gap: 10px;
+    position: absolute;
+    top: 68px;
+    right: 20px;
+    padding: 10px 12px;
+    background-color: var(--verde-forte);
+    border-radius: var(--raio);
+    box-shadow: 0 6px 16px rgba(0, 0, 0, 0.3);
+  }
+
+  .icon-btn img,
+  .icon-btn svg {
+    width: 24px;
+    height: 24px;
+  }
+}
+
+/* =========================================================================
+   TELA DE ERRO (ErrorBoundary e rota não encontrada)
+   ========================================================================= */
+
+.tela-erro {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  min-height: 100vh;
+  min-height: 100dvh;
+  padding: 24px;
+  background: var(--fundo-suave);
+}
+
+.tela-erro__caixa {
+  max-width: 540px;
+  width: 100%;
+  background: #ffffff;
+  border-radius: 16px;
+  border-top: 6px solid var(--erro);
+  padding: 32px;
+  box-shadow: var(--sombra-alta);
+  text-align: center;
+}
+
+.tela-erro__caixa h1 {
+  font-family: var(--fonte-titulo);
+  font-size: 1.4rem;
+  font-weight: 800;
+  color: var(--verde-escuro);
+  margin-bottom: 12px;
+}
+
+.tela-erro__caixa p {
+  color: var(--texto-suave);
+  font-size: 0.95rem;
+  line-height: 1.5;
+  margin-bottom: 18px;
+}
+
+.tela-erro__detalhe {
+  font-family: var(--fonte-corpo);
+  font-size: 0.78rem;
+  color: var(--texto-suave);
+  background: var(--fundo-cartao);
+  border: 1px solid var(--borda);
+  border-radius: 8px;
+  padding: 12px;
+  margin-bottom: 20px;
+  text-align: left;
+  white-space: pre-wrap;
+  word-break: break-word;
+  max-height: 160px;
+  overflow: auto;
+}
+
+.tela-erro__acoes {
+  display: flex;
+  gap: 12px;
+  justify-content: center;
+  flex-wrap: wrap;
+}
+
+.tela-erro__acoes button,
+.tela-erro__acoes a {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  padding: 12px 24px;
+  border: none;
+  border-radius: 10px;
+  background: var(--verde-forte);
+  color: #ffffff;
+  font-family: var(--fonte-corpo);
+  font-weight: 700;
+  font-size: 0.9rem;
+  text-decoration: none;
+  transition: background-color 0.2s;
+}
+
+.tela-erro__acoes a {
+  background: var(--verde-claro);
+  color: var(--verde-claro-txt);
+}
+
+.tela-erro__acoes button:hover {
+  background: var(--verde-escuro);
+}
+
+.tela-erro__acoes a:hover {
+  background: var(--verde-hover);
+}

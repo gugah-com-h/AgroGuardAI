@@ -1,0 +1,220 @@
+/* Página inicial — tudo escopado em .pagina-inicio.
+   Antes esta folha redefinia `*`, `body`, `html` e `main` globalmente, e usava
+   `.lado-esquerdo` / `.lado-direito`, os mesmos nomes da tela de localização
+   com significados opostos (aqui o lado esquerdo é verde, lá é branco). */
+
+.pagina-inicio {
+  display: flex;
+  flex: 1 0 auto;
+  width: 100%;
+  min-height: 100vh;
+  min-height: 100dvh; /* acompanha a barra do navegador no celular */
+  overflow: hidden;
+}
+
+/* --- Metade verde: chamada + ação --- */
+.pagina-inicio__chamada {
+  flex: 1;
+  background-color: var(--verde);
+  color: #ffffff;
+  display: flex;
+  flex-direction: column;
+  justify-content: center;
+  align-items: center;
+  gap: clamp(32px, 7vh, 80px); /* era margin-bottom:80px fixo, que estourava
+                                  a altura em telas baixas e escondia o botão */
+  padding: clamp(24px, 5vw, 48px);
+  position: relative;
+  overflow: hidden;
+  text-align: center;
+}
+
+/* Círculos decorativos */
+.pagina-inicio__chamada::before,
+.pagina-inicio__chamada::after {
+  content: '';
+  position: absolute;
+  left: -100px;
+  border: 2px solid rgba(255, 255, 255, 0.85);
+  border-radius: 50%;
+  pointer-events: none;
+}
+
+.pagina-inicio__chamada::before {
+  top: -100px;
+  width: 300px;
+  height: 300px;
+}
+
+.pagina-inicio__chamada::after {
+  bottom: -120px;
+  width: 320px;
+  height: 320px;
+}
+
+.pagina-inicio__chamada h1 {
+  font-size: clamp(1.5rem, 2.6vw, 2rem);
+  font-weight: 700;
+  line-height: 1.4;
+  letter-spacing: 1px;
+  max-width: 22ch;
+  z-index: 1;
+}
+
+.pagina-inicio__cta {
+  background-color: var(--verde-claro);
+  color: var(--verde-claro-txt);
+  border: none;
+  padding: 14px 45px;
+  font-size: 1rem;
+  font-family: var(--fonte-corpo);
+  font-weight: 700;
+  border-radius: var(--raio);
+  transition: transform 0.2s, background-color 0.2s;
+  z-index: 1;
+}
+
+.pagina-inicio__cta:hover {
+  background-color: var(--verde-hover);
+  transform: scale(1.03);
+}
+
+.pagina-inicio__cta:active {
+  transform: scale(0.99);
+}
+
+/* O <a> do React Router envolve o botão; sem isto ele vira uma caixa
+   sublinhada do tamanho da linha. */
+.pagina-inicio__link {
+  text-decoration: none;
+  z-index: 1;
+  display: inline-flex;
+}
+
+/* --- Metade branca: marca --- */
+.pagina-inicio__marca {
+  flex: 1;
+  background-color: var(--fundo);
+  color: var(--verde-escuro);
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  padding: clamp(24px, 5vw, 48px);
+  position: relative;
+  overflow: hidden;
+}
+
+.pagina-inicio__marca::before,
+.pagina-inicio__marca::after {
+  content: '';
+  position: absolute;
+  border: 2px solid var(--verde);
+  border-radius: 50%;
+  pointer-events: none;
+}
+
+.pagina-inicio__marca::before {
+  top: -150px;
+  left: 10%;
+  width: 350px;
+  height: 350px;
+}
+
+.pagina-inicio__marca::after {
+  bottom: -150px;
+  right: -100px;
+  width: 480px;
+  height: 480px;
+}
+
+.pagina-inicio__marca h1 {
+  font-family: var(--fonte-titulo);
+  font-size: clamp(2rem, 5vw, 3.2rem);
+  font-weight: 900;
+  letter-spacing: -1px;
+  z-index: 1;
+  text-align: center;
+}
+
+/* --- Celular: marca em cima, verde embaixo --- */
+@media (max-width: 768px) {
+  .pagina-inicio {
+    flex-direction: column-reverse;
+  }
+
+  .pagina-inicio__marca {
+    flex: 42 1 0;
+    padding: 20px;
+    text-align: center;
+  }
+
+  .pagina-inicio__marca h1 {
+    font-size: clamp(2rem, 9vw, 2.8rem);
+  }
+
+  /* As duas circunferências viram um traçado único que ocupa a seção */
+  .pagina-inicio__marca::before {
+    inset: 0;
+    top: auto;
+    left: auto;
+    width: 100%;
+    height: 100%;
+    border: none;
+    border-radius: 0;
+    background: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 390 351' preserveAspectRatio='none' fill='none' stroke='%23488E43' stroke-width='2'%3E%3Cpath vector-effect='non-scaling-stroke' d='M0,73 C70,68 118,80 115,125 C112,175 105,200 105,240 C105,300 80,340 0,350'/%3E%3Cpath vector-effect='non-scaling-stroke' d='M283,0 C265,40 255,75 300,92 C335,104 365,112 390,128'/%3E%3Cpath vector-effect='non-scaling-stroke' d='M221,351 C221,280 250,200 320,185 C360,177 380,215 390,233'/%3E%3C/svg%3E") no-repeat center / 100% 100%;
+  }
+
+  .pagina-inicio__marca::after {
+    display: none;
+  }
+
+  .pagina-inicio__chamada {
+    flex: 58 1 0;
+    justify-content: flex-start;
+    align-items: flex-start;
+    gap: 28px;
+    padding: 44px 40px;
+    text-align: left;
+  }
+
+  .pagina-inicio__chamada::before,
+  .pagina-inicio__chamada::after {
+    display: none;
+  }
+
+  /* O botão aparece antes do título no celular */
+  .pagina-inicio__link {
+    order: -1;
+    max-width: 100%;
+  }
+
+  .pagina-inicio__cta {
+    width: 250px;
+    max-width: 100%;
+    padding: 14px 0;
+    border-radius: 10px;
+    font-weight: 400;
+    text-transform: lowercase;
+  }
+
+  .pagina-inicio__chamada h1 {
+    font-size: clamp(1.8rem, 9vw, 2.4rem);
+    line-height: 1.15;
+    letter-spacing: 0;
+    text-transform: lowercase;
+    max-width: none;
+  }
+}
+
+/* Telas largas e muito baixas (notebook em paisagem): deixa rolar em vez
+   de cortar o conteúdo. */
+@media (max-height: 520px) and (min-width: 769px) {
+  .pagina-inicio {
+    overflow-y: auto;
+  }
+
+  .pagina-inicio__chamada,
+  .pagina-inicio__marca {
+    padding-block: 32px;
+  }
+}
